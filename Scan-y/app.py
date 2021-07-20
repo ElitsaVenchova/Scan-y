@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello_world():
-    return render_template('main.html')
+    return render_template('index.html')
     # return render_template('main.html', cities=cities) #За подаване на данни към template
 
 

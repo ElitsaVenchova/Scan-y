@@ -1,5 +1,6 @@
 - Последна версия на Raspberrian
-- Пробване на IDLE(PiCharm)
+- Пробване на IDLE(PyCharm)
+- Stream на видео в HTML от камера(https://www.pyimagesearch.com/2019/09/02/opencv-stream-video-to-web-browser-html-page/)
 - Стъпки за работа(https://www.jetbrains.com/help/pycharm/creating-web-application-with-flask.html#create-application):
 	- Избор python web server - по подразбиране Flask. Доста основен и лесен за учене.
 	- Направа основно приложение. Намиране на начини за достъпване.
