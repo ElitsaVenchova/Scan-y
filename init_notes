@@ -1,0 +1,16 @@
+sudo apt update
+sudo apt upgrade
+sudo apt install libreoffice
+https://projects.raspberrypi.org/en/projects/python-web-server-with-flask/1
+
+git clone /path/to/repository  			 --Create a working copy of a local repository
+--Set credentials
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+--
+df -H --проверка за остащата памет
+----------------------------------------------------	
+git add <filename> 	       --Add one or more files to staging (index)
+git add *		       --Add one or more files to staging (index)
+git commit -m "Commit message" --Commit changes to head (but not yet to the remote repository)git config --global credential.helper storez
+git push origin master 	       --Send changes to the master branch of your remote repository

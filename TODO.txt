@@ -1,5 +1,6 @@
-- Последна версия на Raspberrian
-- Пробване на IDLE(PyCharm)
+- Raspbeerry  Pi model B охлаждане
+- demo stepper motor
+- demo projector
 - Stream на видео в HTML от камера(https://www.pyimagesearch.com/2019/09/02/opencv-stream-video-to-web-browser-html-page/)
 - Стъпки за работа(https://www.jetbrains.com/help/pycharm/creating-web-application-with-flask.html#create-application):
 	- Избор python web server - по подразбиране Flask. Доста основен и лесен за учене.
@@ -7,3 +8,8 @@
 	- Добавяне на бутон пусни/спри, които вече сканиращата част от кода
 	- В нея да се добави пускане/спиране на проектора
 	- Въртене на стъпковия мотор
+- Начини за свързване с RPi за сканиране отдалечено *SSH при стартиране на RPi
+	- rj45-rj45
+	- wifii and LAN
+	- usb-usb/micro usb
+	- bluetooth
