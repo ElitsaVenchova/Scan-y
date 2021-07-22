@@ -1,5 +1,6 @@
 - Raspbeerry  Pi model B охлаждане
-- demo stepper motor
+- demo stepper motor(Nema 14 Bipolar,А4988)- https://www.pololu.com/product/1182, https://www.robotev.com/product_info.php?cPath=1_40_45&products_id=311,
+	- захранване 12V,5A
 - demo projector
 - Stream на видео в HTML от камера(https://www.pyimagesearch.com/2019/09/02/opencv-stream-video-to-web-browser-html-page/)
 - Стъпки за работа(https://www.jetbrains.com/help/pycharm/creating-web-application-with-flask.html#create-application):
