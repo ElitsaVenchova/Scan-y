@@ -9,6 +9,11 @@ git config --global user.email "you@example.com"
 git config --global user.name "Your Name"
 --
 df -H --проверка за остащата памет
+--
+pip install flask
+pip install numpy
+sudo apt install python3-opencv			-- за RPi 3
+pip3 install imutils				-- или pip
 ----------------------------------------------------	
 git add <filename> 	       --Add one or more files to staging (index)
 git add *		       --Add one or more files to staging (index)
@@ -18,3 +23,4 @@ git pull		       --Chechout changes
 git reset --hard origin	       --Hard reset on conflicts
 --
 python3 app.py		       --start server | http://0.0.0.0:5000/ или http://127.0.0.1:5000/ | Ctrl+C --stop server
+python3 webstreaming.py --ip 0.0.0.0 --port 8000

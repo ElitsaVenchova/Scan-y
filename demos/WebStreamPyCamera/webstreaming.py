@@ -3,7 +3,7 @@ from pyimagesearch.motion_detection import SingleMotionDetector
 from imutils.video import VideoStream
 from flask import Response
 from flask import Flask
-from flask import reader_template
+from flask import render_template
 import threading
 import argparse
 import datetime
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                     help="ip addresss of the device")
     ap.add_argument("-o", "--port", type=int, required=True,
                     help="ephemeral port number of the server (1024 to 65535)")
-    app.add_argument("-f", "--frame-count", type=int, default=32,
+    ap.add_argument("-f", "--frame-count", type=int, default=32,
                      help="# of frames used to construct the background model")
     args = vars(ap.parse_args())
 
