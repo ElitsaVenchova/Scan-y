@@ -1,41 +1,39 @@
-# Web streaming example
-# Source code from the official PiCamera package
-# http://picamera.readthedocs.io/en/latest/recipes2.html#web-streaming
-
 import io
 import picamera
 import logging
 import socketserver
 from threading import Condition
 from http import server
+import string
+from pathlib import Path
 
-PAGE="""\
-<html>
-<head>
-<title>Raspberry Pi - Surveillance Camera</title>
-</head>
-<body>
-<center><h1>Raspberry Pi - Surveillance Camera</h1></center>
-<center><img src="stream.mjpg" width="640" height="480"></center>
-</body>
-</html>
-"""
+#страницата, която съдържа html файла
+def get_page():
+##    this_dir = Path(__file__).resolve().parent
+    with open("templates/index.html") as _file:
+        return string.Template(_file.read()).substitute().encode('utf-8')
 
+#класът се използва за output 
 class StreamingOutput(object):
     def __init__(self):
-        self.frame = None
-        self.buffer = io.BytesIO()
-        self.condition = Condition()
+        self.frame = None # кадър, който ще се подаде към web
+        self.buffer = io.BytesIO() # ???
+        self.condition = Condition() # lock
 
+    # единствения задължителен метод, който се извика от
+    # camera.start_recording
     def write(self, buf):
         if buf.startswith(b'\xff\xd8'):
-            # New frame, copy the existing buffer's content and notify all
-            # clients it's available
+            # Изчистане на буфера
             self.buffer.truncate()
+            # Нов кадър(frame),заключване на self, копира съдържанието на
+            # буфера и известява всички клиенти за достъп
             with self.condition:
                 self.frame = self.buffer.getvalue()
                 self.condition.notify_all()
+            # ???
             self.buffer.seek(0)
+        # ???
         return self.buffer.write(buf)
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
@@ -45,7 +43,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Location', '/index.html')
             self.end_headers()
         elif self.path == '/index.html':
-            content = PAGE.encode('utf-8')
+            content = get_page()
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.send_header('Content-Length', len(content))
@@ -82,13 +80,13 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 with picamera.PiCamera(resolution='640x480', framerate=24) as camera:
-    output = StreamingOutput()
-    #Uncomment the next line to change your Pi's Camera rotation (in degrees)
-    #camera.rotation = 90
+    output = StreamingOutput() # обекта, в който ще се записват кадрите
+    #camera.rotation = 90 # Ако е необходима ротация на камера
+    # стартиране запис на камерата
     camera.start_recording(output, format='mjpeg')
     try:
-        address = ('', 8000)
-        server = StreamingServer(address, StreamingHandler)
+        address = ('', 5000) # порт 5000
+        server = StreamingServer(address , StreamingHandler)
         server.serve_forever()
     finally:
         camera.stop_recording()
