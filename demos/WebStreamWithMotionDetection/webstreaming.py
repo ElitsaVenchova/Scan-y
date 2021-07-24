@@ -123,7 +123,7 @@ if __name__ == '__main__':
     t.start()
 
     # start the flask app
-    app.run(host=args["ip"], port=args["port"], debug=True,
+    app.run(host=args["ip"], port=args["port"], debug=False,
             threaded=True, use_reloader=False)
 
     # release the video stream pointer
