@@ -1,11 +1,11 @@
 from time import sleep
 import RPi.GPIO as GPIO
 
-DIR = 20   # Direction GPIO Pin
-STEP = 21  # Step GPIO Pin
+STEP = 20  # Step GPIO Pin
+DIR = 21   # Direction GPIO Pin
 CW = 1     # Clockwise Rotation
 CCW = 0    # Counterclockwise Rotation
-SPR = 48   # Steps per Revolution (360 / 7.5)
+SPR = 200   # Steps per Revolution (360 / 7.5)
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(DIR, GPIO.OUT)
