@@ -2,6 +2,7 @@
 - demo stepper motor(Nema 14 Bipolar,А4988)- https://www.pololu.com/product/1182, https://www.robotev.com/product_info.php?cPath=1_40_45&products_id=311
 	- захранване 12V,5A
 - demo projector
+	- Контролиране на HDMI - https://kalitut.com/raspberry-pi-hdmi-port/
 - Стъпки за работа(https://www.jetbrains.com/help/pycharm/creating-web-application-with-flask.html#create-application):
 	- Избор python web server - по подразбиране Flask. Доста основен и лесен за учене.
 	- Направа основно приложение.
@@ -9,7 +10,7 @@
 	- В нея да се добави пускане/спиране на проектора
 	- Въртене на стъпковия мотор
 - Начини за свързване с RPi за сканиране отдалечено *SSH при стартиране на RPi
-	- rj45-rj45
+	- rj45-rj45 - https://www.youtube.com/watch?v=AJ7skYS5bjI&ab_channel=SaravananAL
 	- wifii and LAN
 	- usb-usb/micro usb
 	- bluetooth
