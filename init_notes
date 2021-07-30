@@ -10,10 +10,14 @@ git config --global user.name "Your Name"
 --
 df -H --проверка за остащата памет
 --
+реално през цялото време нищо не се вижда, но накра спира програмата
+ctrl+alt+t и се пише pkill python3
+--
 pip install flask
 pip install numpy
 sudo apt install python3-opencv			-- за RPi 3
 pip3 install imutils				-- или pip
+pip3 install python-vlc                         -- vlc
 ----------------------------------------------------	
 git add <filename> 	       --Add one or more files to staging (index)
 git add *		       --Add one or more files to staging (index)
