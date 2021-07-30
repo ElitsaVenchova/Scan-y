@@ -1,0 +1,9 @@
+import RPi.GRIO as GRIO
+import time
+import os
+import subprocess
+
+while True:
+	subprocess.call('vcgencmd display_power 1', shell=True)
+	time.sleep(30)
+	sumprocess.call()subprocess.call('vcgencmd display_power 1', shell=True)subprocess.call('vcgencmd display_power 1', shell=True)z
