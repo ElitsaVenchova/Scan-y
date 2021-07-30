@@ -11,6 +11,6 @@
 	- Въртене на стъпковия мотор
 - Начини за свързване с RPi за сканиране отдалечено *SSH при стартиране на RPi
 	- rj45-rj45 - https://www.youtube.com/watch?v=AJ7skYS5bjI&ab_channel=SaravananAL
-	- wifii and LAN
+	- wifii and LAN - 192.168.1.5
 	- usb-usb/micro usb
 	- bluetooth
