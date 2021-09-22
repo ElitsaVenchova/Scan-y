@@ -5,8 +5,8 @@ https://projects.raspberrypi.org/en/projects/python-web-server-with-flask/1
 
 git clone /path/to/repository  			 --Create a working copy of a local repository
 --Set credentials
-git config --global user.email "you@example.com"
-git config --global user.name "Your Name"
+https://github.com/cli/cli/blob/trunk/docs/install_linux.md     Опътване за инсталиране на GitHub CLI.
+https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git      Настройка на аутентикация
 --
 df -H --проверка за остащата памет
 --
