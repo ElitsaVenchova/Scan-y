@@ -7,7 +7,15 @@ import cv2 as cv
 import glob
 #write to file
 import json
+from json import JSONEncoder
 import ast
+
+# Клсас наследяващат JSONEncoder, за да може да се сериализира Numpy array
+class NumpyArrayEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return JSONEncoder.default(self, obj)
 
 # take 10 photos and save in current dir
 ##with PiCamera() as camera:
@@ -69,30 +77,38 @@ if lastImageWithPattern is not None:
     # запиване на резултата от калибрирането
     resCalibration = {
         "ret" : ret,
-        "matrix": matrix.tolist(), #Numpy array is not serializable
-        "distortion": distortion.tolist(), #Numpy array is not serializable
+        "matrix": matrix,
+        "distortion": distortion,
         "r_vecs": r_vecs,
         "t_vecs": t_vecs
         }
-    json.dump(resCalibration, open("CameraCalibrationResult.txt",'w'))
+    json.dump(resCalibration, open("CameraCalibrationResult.txt",'w'), cls=NumpyArrayEncoder)
 
-# Прочитане на резултата от калибрирането
-cameraCalib = literal_eval(open("CameraCalibrationResult.txt",'r').read())
-cameraCalib["matrix"] = np.array(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
-cameraCalib["distortion"] = np.array(cameraCalib["distortion"]) #възтановявне на типа да бъде Numpy array
+    # Прочитане на резултата от калибрирането
+    cameraCalib = eval(open("CameraCalibrationResult.txt",'r').read())
+    cameraCalib["matrix"] = np.asarray(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
+    cameraCalib["distortion"] = np.asarray(cameraCalib["distortion"]) #възтановявне на типа да бъде Numpy array
 
-# Displaying required output
-print(" Ret:")
-print(cameraCalib["ret"])
+    img = cv.imread(lastImageWithPattern)
+    h,w = img.shape[:2] # размерите на изображението
+    newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(matrix,
+                                                        distortion,
+                                                        (w,h),1,(w,h))
 
-print("\n Camera matrix:")
-print(cameraCalib["matrix"])
- 
-print("\n Distortion coefficient:")
-print(cameraCalib["distortion"])
- 
-print("\n Rotation Vectors:")
-print(cameraCalib["r_vecs"])
- 
-print("\n Translation Vectors:")
-print(cameraCalib["t_vecs"])
+    # Премахване на изкривяването
+##    dst = cv.undistort(img, matrix,
+##                       distortion, None, newCameraMatrix)
+    mapx, mapy = cv.initUndistortRectifyMap(matrix, distortion, None, newCameraMatrix, (w,h), 5)
+    dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
+
+    print(matrix)
+    print(h)
+    print(w)
+    print(newCameraMatrix)
+    print(roi)
+    print(dst)
+    # Изрязване на изображението
+    x,y,w,h = roi
+    dst = dst[y:y+h, x:x+w]
+    cv.imwrite('calibResult.jpg', dst)
+    print(dst)
