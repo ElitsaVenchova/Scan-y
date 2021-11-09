@@ -65,6 +65,9 @@ for fname in images:
         # Добавят се координатите на ъглите. После за калибрирането
         objpoints.append(objp)
         imgpoints.append(corners)
+        
+        cv.drawChessboardCorners(img, (CHECKERBOARD[0],CHECKERBOARD[1]), corners2, ret)
+        cv.imwrite('Corners' + fname, img)
 
 if lastImageWithPattern is not None:
     # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
@@ -93,22 +96,13 @@ if lastImageWithPattern is not None:
     h,w = img.shape[:2] # размерите на изображението
     newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(matrix,
                                                         distortion,
-                                                        (w,h),1,(w,h))
+                                                        (w,h),0,(w,h))
 
     # Премахване на изкривяването
-##    dst = cv.undistort(img, matrix,
-##                       distortion, None, newCameraMatrix)
-    mapx, mapy = cv.initUndistortRectifyMap(matrix, distortion, None, newCameraMatrix, (w,h), 5)
-    dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
+    dst = cv.undistort(img, matrix,
+                       distortion, None, newCameraMatrix)
 
-    print(matrix)
-    print(h)
-    print(w)
-    print(newCameraMatrix)
-    print(roi)
-    print(dst)
     # Изрязване на изображението
     x,y,w,h = roi
     dst = dst[y:y+h, x:x+w]
     cv.imwrite('calibResult.jpg', dst)
-    print(dst)
