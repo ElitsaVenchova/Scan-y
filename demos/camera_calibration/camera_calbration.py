@@ -47,7 +47,7 @@ imgpoints = [] # 2d points in image plane.
 
 # взима имената на изображениета *.jpg от директорията
 lastImageWithPattern = None #после изображение с намерен шаблон //После за тест на калибрирането
-images = glob.glob('*.jpg')
+images = glob.glob('image*.jpg')
 for fname in images:
     img = cv.imread(fname) #чете изображението
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #преображуване в черно-бяло
@@ -106,3 +106,4 @@ if lastImageWithPattern is not None:
     x,y,w,h = roi
     dst = dst[y:y+h, x:x+w]
     cv.imwrite('calibResult.jpg', dst)
+    print("Done!")

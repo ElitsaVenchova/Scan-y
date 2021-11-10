@@ -3,7 +3,7 @@ from gpiozero import Servo
 from time import sleep
 import sys
 
-servo=Servo(17)
+servo=Servo(20)
 val=-1
 #------v1
 #    while True:
