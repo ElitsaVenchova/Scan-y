@@ -4,14 +4,15 @@ from time import sleep
 
 camera=PiCamera()
 try:
-    #camera.start_preview()
-    #sleep(5)
+    #camera.rotation = 180
+    camera.start_preview(fullscreen=False,window=(50,80,1000,1200))#alpha=230,
+    sleep(60)
 #--------------Photo
-    #camera.capture('/home/pi/Desktop/Diplomna/image.jpg')
+    camera.capture('image.jpg')
 #--------------Video
-    camera.start_recording('/home/pi/Desktop/Diplomna/video.h264')
-    sleep(10)
-    camera.stop_recording()
+##    camera.start_recording('/home/pi/Desktop/Diplomna/video.h264')
+##    sleep(10)
+##    camera.stop_recording()
 finally:
-    #camera.stop_preview()
+    camera.stop_preview()
     camera.close()
