@@ -1,9 +1,15 @@
 - Raspbeerry  Pi model B охлаждане
-- Калибриране с шахматна дъска
-- Избор на подход за шаблони
 - Генериране на 3D модел от събраната информация
 - Начини за свързване с RPi за сканиране отдалечено *SSH при стартиране на RPi
 	- rj45-rj45 - https://www.youtube.com/watch?v=AJ7skYS5bjI&ab_channel=SaravananAL
 	- wifii and LAN - 192.168.1.5
 	- usb-usb/micro usb
 	- bluetooth
+
+1. Пренаписване кода на класове и опростяване на MAIN
+	- Camera - calibrate, test_preview, take_photo
+	- Projector - calibrate,show_white(да служи само като лампа),show_video
+	- Step motor - move
+2. Калибриране камера
+3. Калибриране проектор
+4. Програма за генериране на шаблони - черно-бял, синусоиден и цветен
