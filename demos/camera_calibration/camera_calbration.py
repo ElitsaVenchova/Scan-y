@@ -1,9 +1,9 @@
 # take photos imports
-from picamera import PiCamera
+#from picamera import PiCamera
 from time import sleep
 # calibration imports
 import numpy as np
-import cv2 as cv
+import cv as cv
 import glob
 #write to file
 import json
