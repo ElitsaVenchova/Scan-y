@@ -3,6 +3,7 @@ Structure light 3D scanner
 
 @TODO:
     * Довършване на генериране на шаблони
+        - Преглед примери от examples
     * Въртене на маса
     * Проектиране на проектор
     * Калибриране на камера
@@ -12,6 +13,7 @@ Structure light 3D scanner
 import cv2
 import numpy as np
 import structuredlight as sl
+import math
 
 def main():
     width  = 640
@@ -33,4 +35,8 @@ def main():
     # cv2.destroyAllWindows()
 
 if __name__=="__main__":
-    main()
+    width  = 16
+    height = 16
+    patternCnt = int(math.log2(16))+1
+    print(np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8))#(y/(width%(x+1)))%2
+    # print(list(imgs.transpose(2, 0, 1)))
