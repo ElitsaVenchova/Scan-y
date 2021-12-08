@@ -1,7 +1,74 @@
+import numpy as np
+import math
+
+"""
+    Генериране на шаблони за сканиране
+"""
 class Patterns:
-    def gray(self, dsize):
+
+    """
+        Двойчен шаблон
+    """
+    def binary(self, dsize):
         width, height = dsize
         patternCnt = int(math.log2(width))+1
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
-        print(np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8))
+        imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        return self.addHeight(imgMatr, height)
+
+    """
+        Gray code шаблон
+    """
+    def gray(self, dsize):
+        width, height = dsize
+        patternCnt = int(math.log2(width))+1
+        #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
+        #<<Горното2>>=(<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
+        #<<Горното2>>%2 - за четни двойки 0, иначе 1
+        imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        return self.addHeight(imgMatr, height)
+
+    """
+        Stripe шаблон
+    """
+    def stripe(self, dsize):
+        width, height = dsize
+        # #шаблони е ширината(за всяка линия по един)
+        #само по една линия на всеки шаблон отдясно на ляво
+        imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+
+        return self.addHeight(imgMatr, height)
+
+    """
+        Отместване на фазата
+    """
+    def phaseShifting(self, dsize):
+        width, height = dsize
+        # #шаблони е ширината(за всяка линия по един)
+        #само по една линия на всеки шаблон отдясно на ляво
+        imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+
+        return self.addHeight(imgMatr, height)
+
+    """
+        N-ary шаблон
+    """
+    def nAry(self, dsize):
+
+    # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
+    def addHeight(self, imgMatr, height):
+        x, y = imgMatr.shape
+        imgMatr = np.tile(imgMatr, height) # Повтаря се всеки ред от матрицата #пъти за височината(пр. h=2 и [[1,2],[3,4]]-> [[1,2,1,2],[3,4,3,4]])
+        imgMatr = np.reshape(imgMatr,(x,height,y)) # всеки ред се d1 се превръща в dHeight(пр от горе -> [[[1,2],[1,2]],[[3,4],[3,4]]])
+        return np.array(imgMatr,dtype=np.uint8) # връща се array, за да може да се прожектира от cv2.imshow
+
+    # обръщане на черно-бял шаблон. Черното става бяла и обратното
+    def invert(self, imlist):
+        # imlist съдържа стойности 0 и 255 => всяко 0 става 255-0=255 и всяко 255 става 255-255=0
+        return [255-img for img in imlist]
+
+    # Транспониране на шаблоните(от вертикални в хоризонстални раета), за да се засеме по y остта
+    def transpose(self, imlist):
+        # img.T транспонира матрицата
+        return [ img.T for img in imlist]
