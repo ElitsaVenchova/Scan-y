@@ -45,16 +45,15 @@ class Patterns:
     """
     def phaseShifting(self, dsize):
         width, height = dsize
-        # #шаблони е ширината(за всяка линия по един)
-        #само по една линия на всеки шаблон отдясно на ляво
-        imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-
+        patternCnt = 3
+        shiftStep = 2*np.pi/patternCnt #2pi/3 (това са точно 3 стъпки и четвъртата е 2pi или 0)
+        freq = np.pi/16 #честота. Колкото е по-голямо, толква по ситно, иначе по-дълги вълни
+        # <<step>>=x*2*np.pi/3 = всеки следващ шаблон е с отместване 2pi/3.
+        # <<func>> = 1+np.cos(freq*y+<<step>>) - 1+, защото cos връща от -1 до 1 и така се неутрализира.
+        # 127*,защото <<func>> връща стойности от 0 до 2, а на нас ни трябват от 0 до 255
+        imgMatr = (255/2)*np.fromfunction(lambda x,y: 1+np.cos(freq*y+(x*shiftStep)), (patternCnt,width), dtype=float)
+        print(imgMatr)
         return self.addHeight(imgMatr, height)
-
-    """
-        N-ary шаблон
-    """
-    def nAry(self, dsize):
 
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
     def addHeight(self, imgMatr, height):
