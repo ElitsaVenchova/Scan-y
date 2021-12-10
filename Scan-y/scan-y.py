@@ -2,8 +2,6 @@
 Structure light 3D scanner
 
 @TODO:
-    * Довършване на генериране на шаблони
-        - Преглед примери от examples
     * Въртене на маса
     * Проектиране на проектор
     * Калибриране на камера
@@ -16,10 +14,12 @@ import structuredlight as sl
 import math
 
 def main():
-    width  = 640
-    height = 480
+    width, height = 640,480#640,480#8,4
+    showPatterns((width, height))
+
+def showPatterns(dsize):
     patterns = sl.Patterns()
-    gray = patterns.stripe((width, height))
+    gray = patterns.phaseShifting(dsize)
     # gray = patterns.transpose(gray)
     for img in gray :
         cv2.imshow('image',img )
@@ -28,4 +28,3 @@ def main():
 
 if __name__=="__main__":
     main()
-    width, height = 640,480#8,4

@@ -52,7 +52,6 @@ class Patterns:
         # <<func>> = 1+np.cos(freq*y+<<step>>) - 1+, защото cos връща от -1 до 1 и така се неутрализира.
         # 127*,защото <<func>> връща стойности от 0 до 2, а на нас ни трябват от 0 до 255
         imgMatr = (255/2)*np.fromfunction(lambda x,y: 1+np.cos(freq*y+(x*shiftStep)), (patternCnt,width), dtype=float)
-        print(imgMatr)
         return self.addHeight(imgMatr, height)
 
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
