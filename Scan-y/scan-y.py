@@ -2,9 +2,9 @@
 Structure light 3D scanner
 
 @TODO:
-    * Калибриране на камерата
+    * Тестване на scan.scan(patternCode) и scan.cameraCalibrate()
     * Проектиране на проектор
-    * Калибриране на проектор
+        - Калибриране на проектор
     * Обработка на сканираните изображения
 """
 import cv2
