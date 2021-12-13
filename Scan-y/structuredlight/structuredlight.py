@@ -1,51 +1,63 @@
+import cv2
 import numpy as np
+import math
 
+from .patterns import Patterns
+from .cameraPi import CameraPi
+from .turntable import Turntable
+
+"""
+    Освен клас съдржащ всички методи за калибриране, сканиране и обработване на данните
+"""
 class StructuredLight:
-    def generate(self, dsize):
-        # dsize = (width, height)
-        raise NotImplementedError()
 
-    def decode(self, imlist):
-        raise NotImplementedError()
-    
-    @staticmethod
-    def split(imgs):
-        return list(imgs.transpose(2, 0, 1))
+    SCAN_DIR = "Scan" # Директория съдържаща снимките за сканирането
 
-    @staticmethod
-    def merge(imlist):
-        return np.dstack(imlist)
-    
-    @staticmethod
-    def binarize(src, thresh):
-        """
-        Binaryization
-        Depending on the combination of the argument types, it is possible to change the method of binaryization.
-        * Simple thresholding    -> (src:1, thresh:0) or (src:2, thresh:0) or (src:3, thresh:0)
-        * Per-pixel thresholding -> (src:1, thresh:1) or (src:2, thresh:1) or (src:3, thresh:1)
-        * Posi-Nega comparing    -> (src:2, thresh:2) or (src:3, thresh:3)
-        
-        src : ndarray
-            1. array (height, width)
-            2. array (height, width, num)
-            3. list of array:1, length is num
-        thresh : array or single digit(int or float)
-            0. digit
-            1. array (height, width)
-            2. array (height, width, num)
-            3. list of array:1, length is num
-        """
-        if type(src)    == list:
-            src    = np.dstack(src)    # (src:3, *) case
-        if type(thresh) == list:
-            thresh = np.dstack(thresh) # (*, thresh:3) case
-        
-        if type(thresh) == np.ndarray:
-            if src.ndim == 3 and thresh.ndim == 2: # (src:2, thresh:1) case
-                thresh = np.dstack([thresh]*src.shape[2])
-        
-        imgs_thresh = thresh * np.ones_like(src)
-        img_bin = np.empty_like(src, dtype=np.uint8)
-        img_bin[src>=imgs_thresh] = True
-        img_bin[src<imgs_thresh] = False
-        return img_bin
+    # Задаване на OUT pin-овете и размер на стъпката
+    def __init__(self, dsize, chessboardSize):
+        # Размер на екрана/прожекцията
+        self.dsize = dsize
+        # въртящата се маса
+        self.turntable = Turntable()
+        # камерата
+        self.piCamera = CameraPi(chessboardSize)
+        # шаблоните
+        self.patterns = Patterns()
+
+    # Сканиране на 360*.
+    # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
+    def scan(self, patternCode):
+        # шаблоните
+        patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
+        patternImgsTran = self.patterns.transpose(patternImgs) # шаблоните транспонирани
+        patternImgsInv = self.patterns.invert(patternImgs) # шаблоните обърнати(ч->б,б->ч)
+        patternImgsInvTran = self.patterns.invert(patternImgsInv) # шаблоните обърнати(ч->б,б->ч) и транспонирани
+
+        # интериране позициите на масата за завъртане на 360*
+        for i in range(self.turntable.SPR):
+            self.scanCurrentStep(patternImgs, "Img", i)
+            self.scanCurrentStep(patternImgsTran, "ImgTran", i)
+            self.scanCurrentStep(patternImgsInv, "ImgInv", i)
+            self.scanCurrentStep(patternImgsInvTran, "ImgInvTran", i)
+            self.turntable.step()
+
+    def scanCurrentStep(self, patternImgs, patternName, stepNo):
+        ind = 0
+        for img in patternImgs:
+            cv2.imshow('image',img)
+            self.piCamera.takePhoto(self.SCAN_DIR,"{0}{1}{2}".format(stepNo,patternName,ind))
+            ind += 1
+            cv2.waitKey(1)
+        cv2.destroyAllWindows()
+
+    def cameraCalibrate(self):
+        # бял шаблон
+        patternCode = Patterns.WHITE
+        patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
+        # интериране позициите на масата за завъртане на 360*
+        for i in range(self.turntable.SPR):
+            cv2.imshow('image',patternImgs[0])
+            self.piCamera.takePhoto(self.piCamera.CALIBRATION_DIR,i)
+            cv2.waitKey(1)
+            self.turntable.step()
+        self.piCamera.calibrate()

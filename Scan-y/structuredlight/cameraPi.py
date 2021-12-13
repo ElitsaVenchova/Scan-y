@@ -13,6 +13,13 @@ import ast
 """
 class CameraPi:
 
+    CALIBRATION_DIR = "Calib" # Директория съдържаща снимките за калибриране
+
+    # Задаване на OUT pin-овете и размер на стъпката
+    def __init__(self, chessboardSize):
+        # Размер на шахматната дъска. Трябва да са точен иначе findChessboardCorners ще върне false.
+        self.chessboardSize = chessboardSize
+
     # Клас наследяващат JSONEncoder, за да може да се сериализира Numpy array
     class NumpyArrayEncoder(JSONEncoder):
         def default(self, obj):
@@ -23,12 +30,12 @@ class CameraPi:
     """
         Прави снимка с камерата и връща името на jpg файла.
     """
-    def takePhoto(self,imageInd):
-        imageFullName = 'image%s.jpg' % imageInd
+    def takePhoto(self, dir, imageInd):
+        imageFullName = '{0}/image{1}.jpg'.format(dir,imageInd)
         with PiCamera() as camera:
         # preview е само за debug
             camera.stop_preview()
-            camera.capture('image%s.jpg' % imageFullName)
+            camera.capture(imageFullName)
             camera.stop_preview()
         return imageFullName
 
@@ -38,17 +45,17 @@ class CameraPi:
         dsize: Размерите на шаха.Трябва да са точни иначе findChessboardCorners ще върне false.
         (8,6)
     """
-    def calibrate(self, dsize):
+    def calibrate(self):
         # Критерии за спиране на търсенето. Използва се в cornerSubPix, което намира по-точно ъглите на дъската
         # (type:COUNT,EPS or COUNT + EPS(2+1),maxCount iteration,
         # epsilon: при каква точност или промяна на стойност алгоритъма спира)
         criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
         # масив нули с редове #ъгли и 3 колони
-        objp = np.zeros((CHECKERBOARD[0]*CHECKERBOARD[1],3), np.float32) #[56][3]
+        objp = np.zeros((self.chessboardSize[0]*self.chessboardSize[1],3), np.float32) #[56][3]
         # прави масива като (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         # един вид все едно в реалния свят са 1,2,3,...
-        objp[:,:2] = np.mgrid[0:CHECKERBOARD[0],0:CHECKERBOARD[1]].T.reshape(-1,2)
+        objp[:,:2] = np.mgrid[0:self.chessboardSize[0],0:self.chessboardSize[1]].T.reshape(-1,2)
 
         # Масиви за съхранение точките на обекта и точките в избражението
         objpoints = [] # 3d point in real world space
@@ -56,14 +63,14 @@ class CameraPi:
 
         # взима имената на изображениета *.jpg от директорията
         lastImageWithPattern = None #после изображение с намерен шаблон //После за тест на калибрирането
-        images = glob.glob('image*.jpg')
+        images = glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg')
         for fname in images:
             img = cv.imread(fname) #чете изображението
             gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #преображуване в черно-бяло
 
             # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
             # ret: дали са намерени ъгли, corners: координати на ъглите
-            ret, corners = cv.findChessboardCorners(gray,(CHECKERBOARD[0],CHECKERBOARD[1]), None)
+            ret, corners = cv.findChessboardCorners(gray,(self.chessboardSize[0],self.chessboardSize[1]), None)
             if ret == True:
                 lastImageWithPattern = fname
                 print("Found pattern in " + fname)
@@ -75,8 +82,8 @@ class CameraPi:
                 objpoints.append(objp)
                 imgpoints.append(corners)
 
-                cv.drawChessboardCorners(img, (CHECKERBOARD[0],CHECKERBOARD[1]), corners2, ret)
-                cv.imwrite('Corners' + fname, img)
+                cv.drawChessboardCorners(img, (self.chessboardSize[0],self.chessboardSize[1]), corners2, ret)
+                # cv.imwrite('Corners' + fname, img) #записва изображението с намерените ъгли на дъската
 
             if lastImageWithPattern is not None:
                 # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
@@ -94,10 +101,10 @@ class CameraPi:
                     "r_vecs": r_vecs,
                     "t_vecs": t_vecs
                     }
-                json.dump(resCalibration, open("CameraCalibrationResult.txt",'w'), cls=NumpyArrayEncoder)
+                json.dump(resCalibration, open("./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt",'w'), cls=self.NumpyArrayEncoder)
 
                 # Прочитане на резултата от калибрирането
-                cameraCalib = eval(open("CameraCalibrationResult.txt",'r').read())
+                cameraCalib = eval(open("./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt",'r').read())
                 cameraCalib["matrix"] = np.asarray(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
                 cameraCalib["distortion"] = np.asarray(cameraCalib["distortion"]) #възтановявне на типа да бъде Numpy array
 
@@ -114,5 +121,5 @@ class CameraPi:
                 # Изрязване на изображението
                 x,y,w,h = roi
                 dst = dst[y:y+h, x:x+w]
-                cv.imwrite('calibResult.jpg', dst)
+                cv.imwrite("./"+self.CALIBRATION_DIR + '/calibResult.jpg', dst)
                 print("Done!")

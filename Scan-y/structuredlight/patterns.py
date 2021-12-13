@@ -47,7 +47,7 @@ class Patterns:
         imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         whitePattern = self.white(dsize)
         pattern = self.addHeight(imgMatr, height)
-        return np.vstack(whitePattern, pattern)
+        return np.vstack((whitePattern, pattern))
 
     """
         Gray code шаблон
@@ -61,10 +61,8 @@ class Patterns:
         imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         #добавяне един бял шаблон в началото за пълно осветяване на сцената
         whitePattern = self.white(dsize)
-        print(type(whitePattern))
         pattern = self.addHeight(imgMatr, height)
-        print(type(pattern))
-        return np.vstack(whitePattern, pattern)
+        return np.vstack((whitePattern, pattern))
 
     """
         Stripe шаблон
@@ -77,7 +75,7 @@ class Patterns:
         #добавяне един бял шаблон в началото за пълно осветяване на сцената
         whitePattern = self.white(dsize)
         pattern = self.addHeight(imgMatr, height)
-        return np.vstack(whitePattern, pattern)
+        return np.vstack((whitePattern, pattern))
 
     """
         Отместване на фазата
@@ -94,7 +92,7 @@ class Patterns:
         #добавяне един бял шаблон в началото за пълно осветяване на сцената
         whitePattern = self.white(dsize)
         pattern = self.addHeight(imgMatr, height)
-        return np.vstack(whitePattern, pattern)
+        return np.vstack((whitePattern, pattern))
 
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
     def addHeight(self, imgMatr, height):
