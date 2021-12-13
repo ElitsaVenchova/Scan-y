@@ -17,6 +17,14 @@ def main():
     patternCode = sl.Patterns.WHITE
     scan(patternCode,(width, height))
 
+    ### @TODO: Debug patterns
+    # patterns = sl.Patterns()
+    # patternImgs = patterns.genetare(patternCode,(width, height)) # шаблоните
+    # for img in patternImgs:
+    #     cv2.imshow('image',img)
+    #     cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
 # Сканиране на 360*.
 # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
 def scan(patternCode,dsize):
@@ -46,8 +54,7 @@ def scanCurrentStep(piCamera, patternImgs, patternName, stepNo):
         cv2.imshow('image',img)
         piCamera.takePhoto(imageName +str(ind))
         ind += 1
-        cv2.waitKey(0)
-        # cv2.waitKey(1)
+        cv2.waitKey(1)
     cv2.destroyAllWindows()
 
 def cameraCalibrate():
