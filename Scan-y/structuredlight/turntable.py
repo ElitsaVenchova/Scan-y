@@ -28,6 +28,9 @@ class Turntable:
         GPIO.setup(MS3, GPIO.OUT)
         self.setStepSize();# задаване 1/16 стъпка
 
+    """
+        Задаване стъпката да е 1/16, за да е по-тихо въртенето
+    """
     # MS1   MS2  MS3   Microstep Resolution
     #------------------------------------
     # Low   Low  Low   Full step
@@ -41,11 +44,11 @@ class Turntable:
         GPIO.output(MS2, GPIO.HIGH)
         GPIO.output(MS3, GPIO.HIGH)
 
-    # Прави cnt стъпки на мотора. Default 1(*16, защото се подава 1/16 стъпка в метод setStepSize())
-    def step(self, dir = CW, cnt = 1*16):
+    # Прави cnt стъпки на мотора. Default 1
+    def step(self, dir = CW, cnt = 1):
         # pass
         GPIO.output(DIR, dir)
-        for x in range(cnt):
+        for x in range(cnt*16): # *16, защото се подава 1/16 стъпка
             GPIO.output(STEP, GPIO.HIGH)
             sleep(DELAY)
             GPIO.output(STEP, GPIO.LOW)

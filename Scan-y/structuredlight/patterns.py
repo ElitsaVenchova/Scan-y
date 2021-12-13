@@ -6,14 +6,17 @@ import math
 """
 class Patterns:
 
-    BINARY = 0
-    STRIPE = 1
-    GRAY_CODE = 2
-    PHASE_SHIFTING = 3
+    WHITE = 0
+    BINARY = 1
+    STRIPE = 2
+    GRAY_CODE = 3
+    PHASE_SHIFTING = 4
 
     # Генериране на шаблон според подадения код
     def genetare(self, patternCode, dsize):
-        if patternCode == self.BINARY:
+        if patternCode == self.WHITE:
+            return self.white(dsize)
+        elif patternCode == self.BINARY:
             return self.binary(dsize)
         elif patternCode == self.STRIPE:
             return self.stripe(dsize)
@@ -25,6 +28,15 @@ class Patterns:
             raise ValueError('Bad pattern code!')
 
     """
+        Единичен шаблон бял - за пълно осветяване на сцената
+    """
+    def white(self, dsize):
+        width, height = dsize
+        patternCnt = 1
+        imgMatr = (255/2)*np.fromfunction(lambda x,y: 1, (patternCnt,width), dtype=float)
+        return self.addHeight(imgMatr, height)
+
+    """
         Двойчен шаблон
     """
     def binary(self, dsize):
@@ -33,7 +45,9 @@ class Patterns:
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        return self.addHeight(imgMatr, height)
+        whitePattern = self.white(dsize)
+        pattern = self.addHeight(imgMatr, height)
+        return np.append(whitePattern, pattern)
 
     """
         Gray code шаблон
@@ -45,7 +59,10 @@ class Patterns:
         #<<Горното2>>=(<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
         #<<Горното2>>%2 - за четни двойки 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        return self.addHeight(imgMatr, height)
+        #добавяне един бял шаблон в началото за пълно осветяване на сцената
+        whitePattern = self.white(dsize)
+        pattern = self.addHeight(imgMatr, height)
+        return np.append(whitePattern, pattern)
 
     """
         Stripe шаблон
@@ -55,8 +72,10 @@ class Patterns:
         # #шаблони е ширината(за всяка линия по един)
         #само по една линия на всеки шаблон отдясно на ляво
         imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-
-        return self.addHeight(imgMatr, height)
+        #добавяне един бял шаблон в началото за пълно осветяване на сцената
+        whitePattern = self.white(dsize)
+        pattern = self.addHeight(imgMatr, height)
+        return np.append(whitePattern, pattern)
 
     """
         Отместване на фазата
@@ -70,7 +89,10 @@ class Patterns:
         # <<func>> = 1+np.cos(freq*y+<<step>>) - 1+, защото cos връща от -1 до 1 и така се неутрализира.
         # 127*,защото <<func>> връща стойности от 0 до 2, а на нас ни трябват от 0 до 255
         imgMatr = (255/2)*np.fromfunction(lambda x,y: 1+np.cos(freq*y+(x*shiftStep)), (patternCnt,width), dtype=float)
-        return self.addHeight(imgMatr, height)
+        #добавяне един бял шаблон в началото за пълно осветяване на сцената
+        whitePattern = self.white(dsize)
+        pattern = self.addHeight(imgMatr, height)
+        return np.append(whitePattern, pattern)
 
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
     def addHeight(self, imgMatr, height):

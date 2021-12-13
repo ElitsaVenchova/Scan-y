@@ -2,6 +2,7 @@
 Structure light 3D scanner
 
 @TODO:
+    * Калибриране на камерата
     * Проектиране на проектор
     * Калибриране на проектор
     * Обработка на сканираните изображения
@@ -13,7 +14,7 @@ import math
 
 def main():
     width, height = 640,480#640,480#8,4
-    patternCode = sl.Patterns.GRAY_CODE
+    patternCode = sl.Patterns.WHITE
     scan(patternCode,(width, height))
 
 # Сканиране на 360*.
@@ -40,15 +41,19 @@ def scan(patternCode,dsize):
 
 def scanCurrentStep(piCamera, patternImgs, patternName, stepNo):
     imageName = str(stepNo)+patternName
-    print(piCamera.takePhoto(imageName))
+    piCamera.takePhoto(imageName)
     ind = 0
     for img in patternImgs:
         cv2.imshow('image',img)
-        print(piCamera.takePhoto(imageName +str(ind)))
+        piCamera.takePhoto(imageName +str(ind))
         ind += 1
-        # cv2.waitKey(0)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
+        # cv2.waitKey(1)
     cv2.destroyAllWindows()
+
+def cameraCalibrate():
+    pass
+
 
 if __name__=="__main__":
     main()
