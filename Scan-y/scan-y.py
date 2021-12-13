@@ -41,7 +41,6 @@ def scan(patternCode,dsize):
 
 def scanCurrentStep(piCamera, patternImgs, patternName, stepNo):
     imageName = str(stepNo)+patternName
-    piCamera.takePhoto(imageName)
     ind = 0
     for img in patternImgs:
         cv2.imshow('image',img)
