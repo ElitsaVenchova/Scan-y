@@ -13,7 +13,7 @@ import math
 
 def main():
     width, height = 640,480#640,480#8,4
-    patternNo = Patterns.GRAY_CODE
+    patternCode = sl.Patterns.GRAY_CODE
     scan(patternCode,(width, height))
 
 # Сканиране на 360*.
@@ -22,7 +22,7 @@ def scan(patternCode,dsize):
     # въртящата се маса
     turntable = sl.Turntable()
     # камерата
-    piCamera = sl.PiCamera()
+    piCamera = sl.CameraPi()
     # шаблоните
     patterns = sl.Patterns()
     patternImgs = patterns.genetare(patternCode,dsize) # шаблоните
@@ -39,13 +39,15 @@ def scan(patternCode,dsize):
         turntable.step()
 
 def scanCurrentStep(piCamera, patternImgs, patternName, stepNo):
-    piCamera.takePhoto(stepNo+patternName);
+    imageName = str(stepNo)+patternName
+    print(piCamera.takePhoto(imageName))
     ind = 0
     for img in patternImgs:
         cv2.imshow('image',img)
-        piCamera.takePhoto(stepNo+patternName+ind);
+        print(piCamera.takePhoto(imageName +str(ind)))
         ind += 1
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
+        cv2.waitKey(1)
     cv2.destroyAllWindows()
 
 if __name__=="__main__":

@@ -12,15 +12,15 @@ class Patterns:
     PHASE_SHIFTING = 3
 
     # Генериране на шаблон според подадения код
-    def genetare(self, dsize, patternCode):
-        if patternCode == BINARY:
-            self.binary(dsize)
-        elif patternCode == STRIPE:
-            self.stripe(dsize)
-        elif patternCode == GRAY_CODE:
-            self.gray(dsize)
-        elif patternCode == PHASE_SHIFTING:
-            self.phaseShifting(dsize)
+    def genetare(self, patternCode, dsize):
+        if patternCode == self.BINARY:
+            return self.binary(dsize)
+        elif patternCode == self.STRIPE:
+            return self.stripe(dsize)
+        elif patternCode == self.GRAY_CODE:
+            return self.gray(dsize)
+        elif patternCode == self.PHASE_SHIFTING:
+            return self.phaseShifting(dsize)
         else:
             raise ValueError('Bad pattern code!')
 
