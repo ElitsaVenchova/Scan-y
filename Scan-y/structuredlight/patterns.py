@@ -6,6 +6,24 @@ import math
 """
 class Patterns:
 
+    BINARY = 0
+    STRIPE = 1
+    GRAY_CODE = 2
+    PHASE_SHIFTING = 3
+
+    # Генериране на шаблон според подадения код
+    def genetare(self, dsize, patternCode):
+        if patternCode == BINARY:
+            self.binary(dsize)
+        elif patternCode == STRIPE:
+            self.stripe(dsize)
+        elif patternCode == GRAY_CODE:
+            self.gray(dsize)
+        elif patternCode == PHASE_SHIFTING:
+            self.phaseShifting(dsize)
+        else:
+            raise ValueError('Bad pattern code!')
+
     """
         Двойчен шаблон
     """

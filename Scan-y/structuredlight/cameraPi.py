@@ -1,7 +1,5 @@
-# take photos imports
-# from picamera import PiCamera
+from picamera import PiCamera
 from time import sleep
-# calibration imports
 import numpy as np
 import cv2 as cv
 import glob
@@ -14,6 +12,7 @@ import ast
     Генериране на шаблони за сканиране
 """
 class CameraPi:
+
     # Клас наследяващат JSONEncoder, за да може да се сериализира Numpy array
     class NumpyArrayEncoder(JSONEncoder):
         def default(self, obj):
@@ -24,24 +23,14 @@ class CameraPi:
     """
         Прави снимка с камерата и връща името на jpg файла.
     """
-    def takePhoto(self, camera,imageName):
-        imageFullName = 'image%s.jpg' % imageName
-        # preview е само за debug
-        # camera.start_preview(alpha=230,fullscreen=False,window=(50,80,1000,1200))
-        camera.capture('image%s.jpg' % imageFullName)
-        camera.stop_preview()
-        return imageFullName
-
-    """
-        Заснемане на достатъчно изображения, които да се използват за калибриране на камерата
-    """
-    def takeCalibrationPhotos(self, camera)
-        # take 10 photos and save in current dir
+    def takePhoto(self,imageInd):
+        imageFullName = 'image%s.jpg' % imageInd
         with PiCamera() as camera:
-           # camera.start_preview(alpha=230,fullscreen=False,window=(50,80,1000,1200))
-           for i in range(10):
-               self.takePhoto(takePhoto,i)
-           camera.stop_preview()
+        # preview е само за debug
+            camera.stop_preview()
+            camera.capture('image%s.jpg' % imageFullName)
+            camera.stop_preview()
+        return imageFullName
 
     """
         Калибриране на камерата.
@@ -50,8 +39,7 @@ class CameraPi:
         (8,6)
     """
     def calibrate(self, dsize):
-        # Критерии за спиране на търсенето. Използва се в cornerSubPix,
-        # което намира по-точно ъглите на дъската
+        # Критерии за спиране на търсенето. Използва се в cornerSubPix, което намира по-точно ъглите на дъската
         # (type:COUNT,EPS or COUNT + EPS(2+1),maxCount iteration,
         # epsilon: при каква точност или промяна на стойност алгоритъма спира)
         criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
