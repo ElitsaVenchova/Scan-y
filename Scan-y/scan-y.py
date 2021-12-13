@@ -6,6 +6,7 @@ Structure light 3D scanner
     * Проектиране на проектор
         - Калибриране на проектор
     * Обработка на сканираните изображения
+    * Web app
 """
 import cv2
 import numpy as np
