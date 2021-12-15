@@ -18,5 +18,5 @@ from .lighttransport import LightTransport
 from .util import *
 
 from .patterns import Patterns
-from .cameraPi import CameraPi
-from .turntable import Turntable
+# from .cameraPi import CameraPi
+# from .turntable import Turntable

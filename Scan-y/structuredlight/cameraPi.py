@@ -1,6 +1,7 @@
 from picamera import PiCamera
 from time import sleep
 import numpy as np
+from natsort import natsorted
 import cv2 as cv
 import glob
 #write to file
@@ -63,7 +64,7 @@ class CameraPi:
 
         # взима имената на изображениета *.jpg от директорията
         lastImageWithPattern = None #после изображение с намерен шаблон //После за тест на калибрирането
-        images = glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg')
+        images = natsorted(glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg'))
         for fname in images:
             print(fname)
             img = cv.imread(fname) #чете изображението

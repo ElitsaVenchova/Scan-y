@@ -35,18 +35,17 @@ class StructuredLight:
 
         # интериране позициите на масата за завъртане на 360*
         for i in range(self.turntable.SPR):
-            self.scanCurrentStep(patternImgs, "Img", i)
-            self.scanCurrentStep(patternImgsTran, "ImgTran", i)
-            self.scanCurrentStep(patternImgsInv, "ImgInv", i)
-            self.scanCurrentStep(patternImgsInvTran, "ImgInvTran", i)
-            self.turntable.step()
+            self.scanCurrentStep(patternImgs, self.SCAN_DIR, "Img", i)
+            self.scanCurrentStep(patternImgsTran, self.SCAN_DIR, "ImgTran", i)
+            self.scanCurrentStep(patternImgsInv, self.SCAN_DIR, "ImgInv", i)
+            self.scanCurrentStep(patternImgsInvTran, self.SCAN_DIR, "ImgInvTran", i)
+            # self.turntable.step()
 
-    def scanCurrentStep(self, patternImgs, patternName, stepNo):
-        ind = 0
-        for img in patternImgs:
+    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
+        # итериране по шаблоните като enumerate добави пореден номер за улеснение
+        for i,img in enumerate(patternImgs):
             cv2.imshow('image',img)
-            self.piCamera.takePhoto(self.SCAN_DIR,"{0}{1}{2}".format(stepNo,patternName,ind))
-            ind += 1
+            self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
             cv2.waitKey(1)
         cv2.destroyAllWindows()
 
@@ -54,11 +53,9 @@ class StructuredLight:
         # бял шаблон
         patternCode = Patterns.WHITE
         patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
+
         # интериране позициите на масата за завъртане на 360*
-        for i in range(self.turntable.SPR):
-            cv2.imshow('image',patternImgs[0])
-            self.piCamera.takePhoto(self.piCamera.CALIBRATION_DIR,i)
-            cv2.waitKey(1)
-            self.turntable.step()
-        cv2.destroyAllWindows()
+        # for i in range(self.turntable.SPR):
+        #     self.scanCurrentStep(patternImgs, self.piCamera.CALIBRATION_DIR, "Img", i)
+        #     self.turntable.step()
         self.piCamera.calibrate()
