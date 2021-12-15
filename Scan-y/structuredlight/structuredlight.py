@@ -39,7 +39,7 @@ class StructuredLight:
             self.scanCurrentStep(patternImgsTran, self.SCAN_DIR, "ImgTran", i)
             self.scanCurrentStep(patternImgsInv, self.SCAN_DIR, "ImgInv", i)
             self.scanCurrentStep(patternImgsInvTran, self.SCAN_DIR, "ImgInvTran", i)
-            # self.turntable.step()
+            self.turntable.step()
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
@@ -55,7 +55,7 @@ class StructuredLight:
         patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
 
         # интериране позициите на масата за завъртане на 360*
-        # for i in range(self.turntable.SPR):
-        #     self.scanCurrentStep(patternImgs, self.piCamera.CALIBRATION_DIR, "Img", i)
-        #     self.turntable.step()
+        for i in range(self.turntable.SPR):
+            self.scanCurrentStep(patternImgs, self.piCamera.CALIBRATION_DIR, "Img", i)
+            self.turntable.step()
         self.piCamera.calibrate()
