@@ -16,3 +16,5 @@ from .checker import Checker
 from .lighttransport import LightTransport
 
 from .util import *
+
+from .patterns import Patterns
