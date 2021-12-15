@@ -15,14 +15,10 @@ class StructuredLight:
 
     # Задаване на OUT pin-овете и размер на стъпката
     def __init__(self, dsize, chessboardSize):
-        # Размер на екрана/прожекцията
-        self.dsize = dsize
-        # въртящата се маса
-        self.turntable = Turntable()
-        # камерата
-        self.piCamera = CameraPi(chessboardSize)
-        # шаблоните
-        self.patterns = Patterns()
+        self.dsize = dsize # Размер на екрана/прожекцията
+        self.turntable = Turntable() # въртящата се маса
+        self.piCamera = CameraPi(chessboardSize) # камера
+        self.patterns = Patterns() # шаблони
 
     # Сканиране на 360*.
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
