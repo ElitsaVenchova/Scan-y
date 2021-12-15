@@ -60,4 +60,5 @@ class StructuredLight:
             self.piCamera.takePhoto(self.piCamera.CALIBRATION_DIR,i)
             cv2.waitKey(1)
             self.turntable.step()
+        cv2.destroyAllWindows()
         self.piCamera.calibrate()

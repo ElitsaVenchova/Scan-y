@@ -21,11 +21,11 @@ class Turntable:
     # Задаване на OUT pin-овете и размер на стъпката
     def __init__(self):
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(DIR, GPIO.OUT)
-        GPIO.setup(STEP, GPIO.OUT)
-        GPIO.setup(MS1, GPIO.OUT)
-        GPIO.setup(MS2, GPIO.OUT)
-        GPIO.setup(MS3, GPIO.OUT)
+        GPIO.setup(self.DIR, GPIO.OUT)
+        GPIO.setup(self.STEP, GPIO.OUT)
+        GPIO.setup(self.MS1, GPIO.OUT)
+        GPIO.setup(self.MS2, GPIO.OUT)
+        GPIO.setup(self.MS3, GPIO.OUT)
         self.setStepSize();# задаване 1/16 стъпка
 
     """
@@ -40,16 +40,16 @@ class Turntable:
     # High  High High  Sixteenth step
     def setStepSize(self):
         # pass
-        GPIO.output(MS1, GPIO.HIGH)
-        GPIO.output(MS2, GPIO.HIGH)
-        GPIO.output(MS3, GPIO.HIGH)
+        GPIO.output(self.MS1, GPIO.HIGH)
+        GPIO.output(self.MS2, GPIO.HIGH)
+        GPIO.output(self.MS3, GPIO.HIGH)
 
     # Прави cnt стъпки на мотора. Default 1
     def step(self, dir = CW, cnt = 1):
         # pass
-        GPIO.output(DIR, dir)
+        GPIO.output(self.DIR, dir)
         for x in range(cnt*16): # *16, защото се подава 1/16 стъпка
-            GPIO.output(STEP, GPIO.HIGH)
-            sleep(DELAY)
-            GPIO.output(STEP, GPIO.LOW)
-            sleep(DELAY)
+            GPIO.output(self.STEP, GPIO.HIGH)
+            sleep(self.DELAY)
+            GPIO.output(self.STEP, GPIO.LOW)
+            sleep(self.DELAY)

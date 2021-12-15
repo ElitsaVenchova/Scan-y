@@ -65,6 +65,7 @@ class CameraPi:
         lastImageWithPattern = None #после изображение с намерен шаблон //После за тест на калибрирането
         images = glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg')
         for fname in images:
+            print(fname)
             img = cv.imread(fname) #чете изображението
             gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY) #преображуване в черно-бяло
 
@@ -85,41 +86,41 @@ class CameraPi:
                 cv.drawChessboardCorners(img, (self.chessboardSize[0],self.chessboardSize[1]), corners2, ret)
                 # cv.imwrite('Corners' + fname, img) #записва изображението с намерените ъгли на дъската
 
-            if lastImageWithPattern is not None:
-                # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
-                # ред(от -1)(?),без матрица на изображението,без коеф. на изкривяване)
-                # return: Флаг за успех(ret), матрица на камерата(matrix), изкривяване(distortion),
-                # изходен вектор на ротиране(r_vecs),изходен вектор на транслиране(t_vecs)
-                ret, matrix, distortion, r_vecs, t_vecs = cv.calibrateCamera(
-                    objpoints, imgpoints, gray.shape[::-1], None, None)
+        if lastImageWithPattern is not None:
+            # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
+            # ред(от -1)(?),без матрица на изображението,без коеф. на изкривяване)
+            # return: Флаг за успех(ret), матрица на камерата(matrix), изкривяване(distortion),
+            # изходен вектор на ротиране(r_vecs),изходен вектор на транслиране(t_vecs)
+            ret, matrix, distortion, r_vecs, t_vecs = cv.calibrateCamera(
+                objpoints, imgpoints, gray.shape[::-1], None, None)
 
-                # запиване на резултата от калибрирането
-                resCalibration = {
-                    "ret" : ret,
-                    "matrix": matrix,
-                    "distortion": distortion,
-                    "r_vecs": r_vecs,
-                    "t_vecs": t_vecs
-                    }
-                json.dump(resCalibration, open("./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt",'w'), cls=self.NumpyArrayEncoder)
+            # запиване на резултата от калибрирането
+            resCalibration = {
+                "ret" : ret,
+                "matrix": matrix,
+                "distortion": distortion,
+                "r_vecs": r_vecs,
+                "t_vecs": t_vecs
+                }
+            json.dump(resCalibration, open("./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt",'w'), cls=self.NumpyArrayEncoder)
 
-                # Прочитане на резултата от калибрирането
-                cameraCalib = eval(open("./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt",'r').read())
-                cameraCalib["matrix"] = np.asarray(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
-                cameraCalib["distortion"] = np.asarray(cameraCalib["distortion"]) #възтановявне на типа да бъде Numpy array
+            # Прочитане на резултата от калибрирането
+            cameraCalib = eval(open("./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt",'r').read())
+            cameraCalib["matrix"] = np.asarray(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
+            cameraCalib["distortion"] = np.asarray(cameraCalib["distortion"]) #възтановявне на типа да бъде Numpy array
 
-                img = cv.imread(lastImageWithPattern)
-                h,w = img.shape[:2] # размерите на изображението
-                newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(matrix,
-                                                                    distortion,
-                                                                    (w,h),0,(w,h))
+            img = cv.imread(lastImageWithPattern)
+            h,w = img.shape[:2] # размерите на изображението
+            newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(matrix,
+                                                                distortion,
+                                                                (w,h),0,(w,h))
 
-                # Премахване на изкривяването
-                dst = cv.undistort(img, matrix,
-                                   distortion, None, newCameraMatrix)
+            # Премахване на изкривяването
+            dst = cv.undistort(img, matrix,
+                               distortion, None, newCameraMatrix)
 
-                # Изрязване на изображението
-                x,y,w,h = roi
-                dst = dst[y:y+h, x:x+w]
-                cv.imwrite("./"+self.CALIBRATION_DIR + '/calibResult.jpg', dst)
-                print("Done!")
+            # Изрязване на изображението
+            x,y,w,h = roi
+            dst = dst[y:y+h, x:x+w]
+            cv.imwrite("./"+self.CALIBRATION_DIR + '/calibResult.jpg', dst)
+            print("Done!")
