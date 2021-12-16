@@ -13,13 +13,13 @@ import structuredlight as sl
 import math
 
 def main():
-    patternCode = sl.Patterns.GRAY_CODE
+    patternCode = sl.Patterns.WHITE
     dsize =(640,480) #640,480#8,4
     chessboardSize = (8,6)
 
     scan = sl.StructuredLight(dsize, chessboardSize)
-    # scan.scan(patternCode)
-    scan.cameraCalibrate()
+    scan.scan(patternCode)
+    #scan.cameraCalibrate()
 
 if __name__=="__main__":
     main()

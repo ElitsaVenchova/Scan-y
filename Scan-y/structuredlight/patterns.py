@@ -32,9 +32,8 @@ class Patterns:
     """
     def white(self, dsize):
         width, height = dsize
-        patternCnt = 1
-        imgMatr = 255*np.fromfunction(lambda x,y: 1+x*0, (1,width), dtype=float) #+x*0,защото иначе не иска да направи масив
-        return self.addHeight(imgMatr, height)
+        imgMatr = 255*np.ones((height, width), np.uint8)
+        return imgMatr
 
     """
         Двойчен шаблон
