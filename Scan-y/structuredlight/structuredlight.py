@@ -56,7 +56,7 @@ class StructuredLight:
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
         for i,img in enumerate(patternImgs):
-            cv2.imshow('image',img)
+            #cv2.imshow('image',img)
             self.projector.playImage(img)
             self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
             cv2.waitKey(0)
