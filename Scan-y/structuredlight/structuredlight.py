@@ -59,5 +59,5 @@ class StructuredLight:
             #cv2.imshow('image',img)
             self.projector.playImage(img)
             self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
-            cv2.waitKey(0)
+            cv2.waitKey(1)
         cv2.destroyAllWindows()
