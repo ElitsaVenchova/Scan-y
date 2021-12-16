@@ -33,6 +33,7 @@ class CameraPi:
     """
     def takePhoto(self, dir, imageInd):
         imageFullName = '{0}/image{1}.jpg'.format(dir,imageInd)
+        print(imageFullName)
         with PiCamera() as camera:
         # preview е само за debug
             camera.stop_preview()
