@@ -11,6 +11,13 @@ class Patterns:
     STRIPE = 2
     GRAY_CODE = 3
     PHASE_SHIFTING = 4
+    
+    WHITE_PATTERN = "White"
+    IMAGE_PATTERN = "Img"
+    INV_PATTERN = "ImgInv"
+    TRANS_PATTERN = "ImgTrans"
+    TRANS_INV_PATTERN = "ImgTransInv"
+    PHASE_PATTERN = "Phase"
 
     # Генериране на шаблон според подадения код
     def genetare(self, patternCode, dsize):
@@ -32,8 +39,8 @@ class Patterns:
     """
     def white(self, dsize):
         width, height = dsize
-        imgMatr = 255*np.ones((height, width), np.uint8)
-        return imgMatr
+        imgMatr = 255*np.ones((1,height, width), np.uint8)
+        return {self.WHITE_PATTERN:imgMatr}
 
     """
         Двойчен шаблон
@@ -44,9 +51,9 @@ class Patterns:
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        whitePattern = self.white(dsize)
-        pattern = self.addHeight(imgMatr, height)
-        return np.vstack((whitePattern, pattern))
+        imgMatrTrans = 255*np.fromfunction(lambda x,y: (y/(height/pow(2,x)))%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        
+        return self.multiply(imgMatr,imgMatrTrans,dsize)
 
     """
         Gray code шаблон
@@ -58,10 +65,9 @@ class Patterns:
         #<<Горното2>>=(<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
         #<<Горното2>>%2 - за четни двойки 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        #добавяне един бял шаблон в началото за пълно осветяване на сцената
-        whitePattern = self.white(dsize)
-        pattern = self.addHeight(imgMatr, height)
-        return np.vstack((whitePattern, pattern))
+        imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        
+        return self.multiply(imgMatr,imgMatrTrans,dsize)
 
     """
         Stripe шаблон
@@ -71,10 +77,9 @@ class Patterns:
         # #шаблони е ширината(за всяка линия по един)
         #само по една линия на всеки шаблон отдясно на ляво
         imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        #добавяне един бял шаблон в началото за пълно осветяване на сцената
-        whitePattern = self.white(dsize)
-        pattern = self.addHeight(imgMatr, height)
-        return np.vstack((whitePattern, pattern))
+        imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        
+        return self.multiply(imgMatr,imgMatrTrans,dsize)
 
     """
         Отместване на фазата
@@ -88,11 +93,28 @@ class Patterns:
         # <<func>> = 1+np.cos(freq*y+<<step>>) - 1+, защото cos връща от -1 до 1 и така се неутрализира.
         # 127*,защото <<func>> връща стойности от 0 до 2, а на нас ни трябват от 0 до 255
         imgMatr = (255/2)*np.fromfunction(lambda x,y: 1+np.cos(freq*y+(x*shiftStep)), (patternCnt,width), dtype=float)
-        #добавяне един бял шаблон в началото за пълно осветяване на сцената
-        whitePattern = self.white(dsize)
-        pattern = self.addHeight(imgMatr, height)
-        return np.vstack((whitePattern, pattern))
-
+        
+        return {self.PHASE_PATTERN: self.addHeight(imgMatr, height)}
+    
+    # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
+    # dsize = (width, height)
+    def multiply(self, pattern, patternTrans, dsize):
+        pattern = self.addHeight(pattern, dsize[1])
+        patternInv = self.invert(pattern)
+      
+        patternTrans = self.addHeight(patternTrans, dsize[0])
+        patternTrans = self.transpose(patternTrans)
+        patternTransInv = self.invert(patternTrans)
+        
+        patterns = {
+            self.IMAGE_PATTERN: pattern,
+            self.INV_PATTERN: patternInv,
+            self.TRANS_PATTERN: patternTrans,
+            self.TRANS_INV_PATTERN: patternTransInv}
+        # добавяне един бял шаблон в началото за пълно осветяване на сцената
+        patterns.update(self.white(dsize))
+        return patterns
+    
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
     def addHeight(self, imgMatr, height):
         x, y = imgMatr.shape
@@ -106,6 +128,6 @@ class Patterns:
         return [255-img for img in imlist]
 
     # Транспониране на шаблоните(от вертикални в хоризонстални раета), за да се засеме по y остта
-    def transpose(self, imlist):
+    def transpose(self, pattern):
         # img.T транспонира матрицата
-        return [ img.T for img in imlist]
+        return [ img.T for img in pattern]
