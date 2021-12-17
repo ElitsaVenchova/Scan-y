@@ -11,7 +11,7 @@ class Patterns:
     STRIPE = 2
     GRAY_CODE = 3
     PHASE_SHIFTING = 4
-    
+
     WHITE_PATTERN = "White"
     IMAGE_PATTERN = "Img"
     INV_PATTERN = "ImgInv"
@@ -52,7 +52,7 @@ class Patterns:
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         imgMatrTrans = 255*np.fromfunction(lambda x,y: (y/(height/pow(2,x)))%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        
+
         return self.multiply(imgMatr,imgMatrTrans,dsize)
 
     """
@@ -66,7 +66,7 @@ class Patterns:
         #<<Горното2>>%2 - за четни двойки 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        
+
         return self.multiply(imgMatr,imgMatrTrans,dsize)
 
     """
@@ -78,7 +78,7 @@ class Patterns:
         #само по една линия на всеки шаблон отдясно на ляво
         imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        
+
         return self.multiply(imgMatr,imgMatrTrans,dsize)
 
     """
@@ -93,28 +93,26 @@ class Patterns:
         # <<func>> = 1+np.cos(freq*y+<<step>>) - 1+, защото cos връща от -1 до 1 и така се неутрализира.
         # 127*,защото <<func>> връща стойности от 0 до 2, а на нас ни трябват от 0 до 255
         imgMatr = (255/2)*np.fromfunction(lambda x,y: 1+np.cos(freq*y+(x*shiftStep)), (patternCnt,width), dtype=float)
-        
+
         return {self.PHASE_PATTERN: self.addHeight(imgMatr, height)}
-    
+
     # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
     # dsize = (width, height)
     def multiply(self, pattern, patternTrans, dsize):
         pattern = self.addHeight(pattern, dsize[1])
         patternInv = self.invert(pattern)
-      
+
         patternTrans = self.addHeight(patternTrans, dsize[0])
         patternTrans = self.transpose(patternTrans)
         patternTransInv = self.invert(patternTrans)
-        
+
         patterns = {
             self.IMAGE_PATTERN: pattern,
             self.INV_PATTERN: patternInv,
             self.TRANS_PATTERN: patternTrans,
             self.TRANS_INV_PATTERN: patternTransInv}
-        # добавяне един бял шаблон в началото за пълно осветяване на сцената
-        patterns.update(self.white(dsize))
         return patterns
-    
+
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
     def addHeight(self, imgMatr, height):
         x, y = imgMatr.shape

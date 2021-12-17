@@ -21,5 +21,13 @@ def main():
     scan.scan(patternCode)
     #scan.cameraCalibrate()
 
+    # patterns = sl.Patterns() # шаблони
+    # patternsArr = patterns.genetare(patternCode,dsize) # шаблоните
+    # for key, pattr in patternsArr.items():
+    #     for i,img in enumerate(pattr):
+    #         cv2.imshow(key,img)
+    #         cv2.waitKey(0)
+    #     cv2.destroyAllWindows()
+
 if __name__=="__main__":
     main()
