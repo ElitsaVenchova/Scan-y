@@ -45,10 +45,10 @@ class Turntable:
         GPIO.output(self.MS3, GPIO.HIGH)
 
     # Прави cnt стъпки на мотора. Default 1
-    def step(self, dir = CW, cnt = 1):
+    def step(self, step_size, dir = CW, cnt = 1):
         # pass
         GPIO.output(self.DIR, dir)
-        for x in range(cnt*16): # *16, защото се подава 1/16 стъпка
+        for x in range(cnt*16*step_size): # *16, защото се подава 1/16 стъпка
             GPIO.output(self.STEP, GPIO.HIGH)
             sleep(self.DELAY)
             GPIO.output(self.STEP, GPIO.LOW)
