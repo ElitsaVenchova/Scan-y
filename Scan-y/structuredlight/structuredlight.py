@@ -25,25 +25,12 @@ class StructuredLight:
     def scan(self, patternCode):
         # шаблоните
         patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
-        patternImgsTran = self.patterns.transpose(patternImgs) # шаблоните транспонирани
-        patternImgsInv = self.patterns.invert(patternImgs) # шаблоните обърнати(ч->б,б->ч)
-        patternImgsInvTran = self.patterns.invert(patternImgsInv) # шаблоните обърнати(ч->б,б->ч) и транспонирани
 
         # интериране позициите на масата за завъртане на 360*
         for i in range(self.turntable.SPR):
-            self.scanCurrentStep(patternImgs, self.SCAN_DIR, "Img", i)
-            self.scanCurrentStep(patternImgsTran, self.SCAN_DIR, "ImgTran", i)
-            self.scanCurrentStep(patternImgsInv, self.SCAN_DIR, "ImgInv", i)
-            self.scanCurrentStep(patternImgsInvTran, self.SCAN_DIR, "ImgInvTran", i)
-            self.turntable.step()
-
-    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
-        # итериране по шаблоните като enumerate добави пореден номер за улеснение
-        for i,img in enumerate(patternImgs):
-            # cv2.imshow('image',img)
-            self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
-            cv2.waitKey(1)
-        cv2.destroyAllWindows()
+            for pattType, patt in thisdict.items():
+                self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i)
+                self.turntable.step()
 
     def cameraCalibrate(self):
         # бял шаблон
@@ -52,6 +39,15 @@ class StructuredLight:
 
         # интериране позициите на масата за завъртане на 360*
         for i in range(self.turntable.SPR):
-            self.scanCurrentStep(patternImgs, self.piCamera.CALIBRATION_DIR, "Img", i)
-            self.turntable.step()
+            for pattType, patt in thisdict.items():
+                self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
+                self.turntable.step()
         self.piCamera.calibrate()
+
+    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
+    # итериране по шаблоните като enumerate добави пореден номер за улеснение
+    for i,img in enumerate(patternImgs):
+        # cv2.imshow('image',img)
+        self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
+        cv2.waitKey(1)
+    cv2.destroyAllWindows()
