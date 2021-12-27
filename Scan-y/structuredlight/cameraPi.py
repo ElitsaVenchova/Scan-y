@@ -5,8 +5,6 @@ from natsort import natsorted
 import cv2 as cv
 import glob
 #write to file
-import json
-from json import JSONEncoder
 import ast
 
 """
@@ -15,7 +13,7 @@ import ast
 class CameraPi:
 
     CALIBRATION_DIR = "Calib" # Директория съдържаща снимките за калибриране и файла с резултата
-    CALIBRATION_FILE = "./"+self.CALIBRATION_DIR + "/CameraCalibrationResult.txt" # Файл с резултата от калибрирането
+    CALIBRATION_FILE = "./"+ CALIBRATION_DIR + "/CameraCalibrationResult.json" # Файл с резултата от калибрирането
 
     """
         Прави снимка с камерата и връща името на jpg файла.
@@ -57,7 +55,7 @@ class CameraPi:
         # взима имената на изображениета *.jpg от директорията сортирани по естествен начин
         images = natsorted(glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg'))
         for fname in images:
-            img = cv.imread(fname, cv2.IMREAD_GRAYSCALE) #чете изображението и преображуване в черно-бяло
+            img = cv.imread(fname, cv.IMREAD_GRAYSCALE) #чете изображението и преображуване в черно-бяло
 
             # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
             # ret: дали са намерени ъгли, corners: координати на ъглите
@@ -76,38 +74,36 @@ class CameraPi:
                 imgpoints.append(corners)
 
         if lastImageWithPattern is not None:
+            img = cv.imread(fname)
+            gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
             # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
             # ред(от -1)(?),без матрица на изображението,без коеф. на изкривяване)
             # return: Флаг за успех(ret), матрица на камерата(matrix), изкривяване(distortion),
             # изходен вектор на ротиране(r_vecs),изходен вектор на транслиране(t_vecs)
             ret, matrix, distortion, r_vecs, t_vecs = cv.calibrateCamera(
                 objpoints, imgpoints, gray.shape[::-1], None, None)
-
             # запиване на резултата от калибрирането
             camCalibration = {
-                "shape" : None,
-                "ret" : ret,
+                "shape" : gray.shape,
                 "matrix": matrix,
                 "distortion": distortion,
                 "r_vecs": r_vecs,
                 "t_vecs": t_vecs
                 }
             projCalibration = {
-                "shape" : None,
-                "ret" : None,
-                "matrix": None,
-                "distortion": None,
-                "r_vecs": None,
-                "t_vecs": None
+                "shape" : np.array([0]),
+                "matrix": np.array([0]),
+                "distortion": np.array([0]),
+                "r_vecs": np.array([0]),
+                "t_vecs": np.array([0])
                 }
             self.writeCalibrationResult(camCalibration, projCalibration)
 
             # Прочитане на резултата от калибрирането
             camCalibration, projCalibration = self.readCalibrationResult()
-            img = self.calibrateImage(lastImageWithPattern, camCalibration)
+            img = self.calibrateImage(img, camCalibration)
 
-    def calibrateImage(self, imgName, camCalibration)
-        img = cv.imread(imgName)
+    def calibrateImage(self, img, camCalibration):
         h,w = img.shape[:2] # размерите на изображението
         newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(camCalibration["matrix"],
                                                             camCalibration["distortion"],
@@ -125,48 +121,44 @@ class CameraPi:
     """
         Записесне на резултатите от калбирането във файл
     """
-    def writeCalibrationResult(self, camCalibration, projCalibration)
+    def writeCalibrationResult(self, camCalibration, projCalibration):
         # отваряне на файл за записване на резултата от калибрацията
-        fs = cv2.FileStorage(self.CALIBRATION_FILE, cv2.FILE_STORAGE_WRITE)
+        fs = cv.FileStorage(self.CALIBRATION_FILE, cv.FILE_STORAGE_WRITE)
         # Параметри на камерата
         fs.write('cam_shape', camCalibration["shape"])
-        fs.write('cam_ret', camCalibration["ret"])
         fs.write('cam_matrix', camCalibration["matrix"])
         fs.write('cam_distortion', camCalibration["distortion"])
-        fs.write('cam_r_vecs', camCalibration["r_vecs"])
-        fs.write('cam_t_vecs', camCalibration["t_vecs"])
+        # fs.write('cam_r_vecs', camCalibration["r_vecs"])
+        # fs.write('cam_t_vecs', camCalibration["r_vecs"])
         # Параметри на проектора
         fs.write('proj_shape', projCalibration["shape"])
-        fs.write('proj_ret', projCalibration["ret"])
         fs.write('proj_matrix', projCalibration["matrix"])
         fs.write('proj_distortiont', projCalibration["distortion"])
-        fs.write('proj_r_vecs', projCalibration["r_vecs"])
-        fs.write('proj_t_vecs', projCalibration["t_vecs"])
+        # fs.write('proj_r_vecs', projCalibration["r_vecs"])
+        # fs.write('proj_t_vecs', projCalibration["t_vecs"])
         fs.release()
 
 
     """
         Прочитане на резултатите от калбирането
     """#np.asarray(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
-    def readCalibrationResult(self)
+    def readCalibrationResult(self):
         # отваряне на файл за записване на резултата от калибрацията
-        fs = cv2.FileStorage(self.CALIBRATION_FILE, cv2.FILE_STORAGE_READ)
+        fs = cv.FileStorage(self.CALIBRATION_FILE, cv.FILE_STORAGE_READ)
         # Параметри на камерата
         camCalibration = {
             "shape" : fs.getNode('cam_shape').mat(),
-            "ret" : fs.getNode('cam_ret').mat(),
             "matrix" : fs.getNode('cam_matrix').mat(),
-            "distortion" : fs.getNode('cam_distortion').mat(),
-            "r_vecs" : fs.getNode('cam_r_vecs').mat(),
-            "t_vecs" : fs.getNode('cam_t_vecs').mat()
+            "distortion" : fs.getNode('cam_distortion').mat()
+            # "r_vecs" : fs.getNode('cam_r_vecs').mat(),
+            # "t_vecs" : fs.getNode('cam_t_vecs').mat()
             }
         # Параметри на проектора
         projCalibration = {
             "shape" : fs.getNode('proj_shape').mat(),
-            "ret" : fs.getNode('proj_ret').mat(),
             "matrix": fs.getNode('proj_matrix').mat(),
-            "distortion": fs.getNode('proj_distortiont').mat(),
-            "r_vecs": fs.getNode('proj_r_vecs').mat(),
-            "t_vecs": fs.getNode('proj_t_vecs').mat()
+            "distortion": fs.getNode('proj_distortiont').mat()
+            # "r_vecs": fs.getNode('proj_r_vecs').mat(),
+            # "t_vecs": fs.getNode('proj_t_vecs').mat()
             }
         return (camCalibration, projCalibration)

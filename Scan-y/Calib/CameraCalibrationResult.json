@@ -1,0 +1,48 @@
+{
+    "cam_shape": {
+        "type_id": "opencv-matrix",
+        "rows": 2,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 1080.0, 1920.0 ]
+    },
+    "cam_matrix": {
+        "type_id": "opencv-matrix",
+        "rows": 3,
+        "cols": 3,
+        "dt": "d",
+        "data": [ 1.5256451327521718e+03, 0.0, 1.0057835487802180e+03,
+            0.0, 1.5473288248383130e+03, 5.6045392861545145e+02, 0.0,
+            0.0, 1.0 ]
+    },
+    "cam_distortion": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 5,
+        "dt": "d",
+        "data": [ 6.5016581085017844e-02, 8.4587287685800194e-01,
+            6.8016273929629855e-05, 2.2120272563572699e-02,
+            -5.1798851289615673e+00 ]
+    },
+    "proj_shape": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "i",
+        "data": [ 0 ]
+    },
+    "proj_matrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "i",
+        "data": [ 0 ]
+    },
+    "proj_distortiont": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "i",
+        "data": [ 0 ]
+    }
+}
