@@ -16,10 +16,11 @@ def main():
     patternCode = sl.Patterns.GRAY_CODE
     dsize =(820,480) #640,480#8,4
     chessboardSize = (8,6)
+    chessBlockSize = 16 # mm
 
-    scan = sl.StructuredLight(dsize, chessboardSize)
+    scan = sl.StructuredLight(dsize)
     scan.scan(patternCode)
-    #scan.cameraCalibrate()
+    #scan.cameraCalibrate(chessboardSize, chessBlockSize)
 
     # patterns = sl.Patterns() # шаблони
     # patternsArr = patterns.genetare(patternCode,dsize) # шаблоните

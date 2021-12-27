@@ -13,14 +13,14 @@ from .projector import Projector
 class StructuredLight:
 
     SCAN_DIR = "Scan" # Директория съдържаща снимките за сканирането
-    # Определя големината на една стъпка. 
+    # Определя големината на една стъпка.
     STEP_SIZE = 25 # 200/1 - ще се сканира от 200 ъгъла; 200/25=8 - ще се сканира от 8 ъгъла
 
     # Задаване на OUT pin-овете и размер на стъпката
-    def __init__(self, dsize, chessboardSize):
+    def __init__(self, dsize):
         self.dsize = dsize # Размер на екрана/прожекцията
         self.turntable = Turntable() # въртящата се маса
-        self.piCamera = CameraPi(chessboardSize) # камера
+        self.piCamera = CameraPi() # камера
         self.patterns = Patterns() # шаблони
         self.projector = Projector() # проектор
 
@@ -38,7 +38,7 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-    def cameraCalibrate(self):
+    def cameraCalibrate(self, chessboardSize, chessBlockSize):
         # бял шаблон
         patternCode = Patterns.WHITE
         patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
@@ -49,7 +49,7 @@ class StructuredLight:
             for pattType, patt in patternImgs.items():
                 self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
             self.turntable.step(self.STEP_SIZE)
-        self.piCamera.calibrate()
+        self.piCamera.calibrate(self.dsize, chessboardSize, chessBlockSize)
         self.projector.stop()
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
