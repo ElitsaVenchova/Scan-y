@@ -56,7 +56,7 @@ class StructuredLight:
             for pattType, patt in patternImgs.items():
                 self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
             self.turntable.step(1, self.turntable.CCW)# стъпка обратно по часовниковата стрелка
-        self.turntable.step(20, self.turntable.CW) # връщане в изходна позиция
+        self.turntable.step(19, self.turntable.CW) # връщане в изходна позиция
         
         self.piCamera.calibrate(chessboardSize, chessBlockSize)
         self.projector.stop()
