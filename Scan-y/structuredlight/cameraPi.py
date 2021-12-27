@@ -1,11 +1,9 @@
 from picamera import PiCamera
-from time import sleep
 import numpy as np
 from natsort import natsorted
 import cv2 as cv
 import glob
-#write to file
-import ast
+import os
 
 """
     Генериране на шаблони за сканиране
@@ -31,10 +29,11 @@ class CameraPi:
     """
         Калибриране на камерата.
         Източник: https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html
-        dsize: Размерите на шаха.Трябва да са точни иначе findChessboardCorners ще върне false.
+        chessboardSize: Размерите на шаха.Трябва да са точни иначе findChessboardCorners ще върне false.
         (8,6)
+        chessBlockSize: Ширина на едно кврадче от дъската
     """
-    def calibrate(self, dsize, chessboardSize, chessBlockSize):
+    def calibrate(self, chessboardSize, chessBlockSize):
         # Критерии за спиране на търсенето. Използва се в cornerSubPix, което намира по-точно ъглите на дъската
         # (type:COUNT,EPS or COUNT + EPS(2+1),maxCount iteration,
         # epsilon: при каква точност или промяна на стойност алгоритъма спира)
@@ -55,11 +54,8 @@ class CameraPi:
         # взима имената на изображениета *.jpg от директорията сортирани по естествен начин
         images = natsorted(glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg'))
         for fname in images:
-            img = cv.imread(fname, cv.IMREAD_GRAYSCALE) #чете изображението и преображуване в черно-бяло
-
-            # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
-            # ret: дали са намерени ъгли, corners: координати на ъглите
-            ret, corners = cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
+            # Намиране на ъглите на квадратите
+            ret, corners = self.findChessboardCorners(fname, chessboardSize) 
             if ret == True:
                 lastImageWithPattern = fname
                 print("Found pattern in " + fname)
@@ -72,6 +68,8 @@ class CameraPi:
                 # Добавят се координатите на ъглите. После за калибрирането
                 objpoints.append(objp)
                 imgpoints.append(corners)
+            else:
+                os.remove(fname)
 
         if lastImageWithPattern is not None:
             img = cv.imread(fname)
@@ -102,7 +100,17 @@ class CameraPi:
             # Прочитане на резултата от калибрирането
             camCalibration, projCalibration = self.readCalibrationResult()
             img = self.calibrateImage(img, camCalibration)
+            
+    
+    # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
+    # return -> ret: дали са намерени ъгли, corners: координати на ъглите
+    def findChessboardCorners(self, fname, chessboardSize):
+        img = cv.imread(fname, cv.IMREAD_GRAYSCALE) #чете изображението и преображуване в черно-бяло
+        # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
+        # ret: дали са намерени ъгли, corners: координати на ъглите
+        return cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
 
+    # Калибриране на изображението
     def calibrateImage(self, img, camCalibration):
         h,w = img.shape[:2] # размерите на изображението
         newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(camCalibration["matrix"],

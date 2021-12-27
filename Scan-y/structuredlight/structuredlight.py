@@ -16,9 +16,10 @@ class StructuredLight:
     # Определя големината на една стъпка.
     STEP_SIZE = 25 # 200/1 - ще се сканира от 200 ъгъла; 200/25=8 - ще се сканира от 8 ъгъла
 
-    # Задаване на OUT pin-овете и размер на стъпката
-    def __init__(self, dsize):
-        self.dsize = dsize # Размер на екрана/прожекцията
+    # Инициализиране на необходимите параметри за сканиране и калибриране
+    def __init__(self, cSize, pSize):
+        self.cSize = cSize # Резолюциата на камерата
+        self.pSize = pSize # Размер прожекцията
         self.turntable = Turntable() # въртящата се маса
         self.piCamera = CameraPi() # камера
         self.patterns = Patterns() # шаблони
@@ -28,7 +29,7 @@ class StructuredLight:
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
     def scan(self, patternCode):
         # шаблоните
-        patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
+        patternImgs = self.patterns.genetare(patternCode,self.pSize) # шаблоните
 
         self.projector.start()
         # интериране позициите на масата за завъртане на 360*
@@ -41,15 +42,23 @@ class StructuredLight:
     def cameraCalibrate(self, chessboardSize, chessBlockSize):
         # бял шаблон
         patternCode = Patterns.WHITE
-        patternImgs = self.patterns.genetare(patternCode,self.dsize) # шаблоните
+        patternImgs = self.patterns.genetare(patternCode,self.pSize) # шаблоните
 
         self.projector.start()
-        # интериране позициите на масата за завъртане на 360*
-        for i in range(0, self.turntable.SPR, self.STEP_SIZE):
+        # местим шахматната дъска 20 позии наляво и 20 надясно
+        # резултатът е 40 изображения за калибриране
+        for i in range(0, 20):
             for pattType, patt in patternImgs.items():
                 self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
-            self.turntable.step(self.STEP_SIZE)
-        self.piCamera.calibrate(self.dsize, chessboardSize, chessBlockSize)
+            self.turntable.step(1, self.turntable.CW)# стъпка по часовниковата стрелка
+        self.turntable.step(20, self.turntable.CCW) # връщане в изходна позиция
+        for i in range(20, 40):
+            for pattType, patt in patternImgs.items():
+                self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
+            self.turntable.step(1, self.turntable.CCW)# стъпка обратно по часовниковата стрелка
+        self.turntable.step(20, self.turntable.CW) # връщане в изходна позиция
+        
+        self.piCamera.calibrate(chessboardSize, chessBlockSize)
         self.projector.stop()
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
@@ -58,5 +67,4 @@ class StructuredLight:
             # cv2.imshow('image',img)
             self.projector.playImage(img)
             self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
-            cv2.waitKey(1)
         cv2.destroyAllWindows()

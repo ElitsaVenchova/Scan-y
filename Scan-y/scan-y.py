@@ -14,13 +14,14 @@ import math
 
 def main():
     patternCode = sl.Patterns.GRAY_CODE
-    dsize =(820,480) #640,480#8,4
+    cSize =(1920,1080) # размер на камерата
+    pSize =(615,360) #8,4 # размер на проектора
     chessboardSize = (8,6)
     chessBlockSize = 16 # mm
 
-    scan = sl.StructuredLight(dsize)
-    scan.scan(patternCode)
-    #scan.cameraCalibrate(chessboardSize, chessBlockSize)
+    scan = sl.StructuredLight(cSize, pSize)
+    #scan.scan(patternCode)
+    scan.cameraCalibrate(chessboardSize, chessBlockSize)
 
     # patterns = sl.Patterns() # шаблони
     # patternsArr = patterns.genetare(patternCode,dsize) # шаблоните

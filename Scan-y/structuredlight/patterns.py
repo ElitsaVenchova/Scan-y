@@ -20,46 +20,46 @@ class Patterns:
     PHASE_PATTERN = "Phase"
 
     # Генериране на шаблон според подадения код
-    def genetare(self, patternCode, dsize):
+    def genetare(self, patternCode, pSize):
         if patternCode == self.WHITE:
-            return self.white(dsize)
+            return self.white(pSize)
         elif patternCode == self.BINARY:
-            return self.binary(dsize)
+            return self.binary(pSize)
         elif patternCode == self.STRIPE:
-            return self.stripe(dsize)
+            return self.stripe(pSize)
         elif patternCode == self.GRAY_CODE:
-            return self.gray(dsize)
+            return self.gray(pSize)
         elif patternCode == self.PHASE_SHIFTING:
-            return self.phaseShifting(dsize)
+            return self.phaseShifting(pSize)
         else:
             raise ValueError('Bad pattern code!')
 
     """
         Единичен шаблон бял - за пълно осветяване на сцената
     """
-    def white(self, dsize):
-        width, height = dsize
+    def white(self, pSize):
+        width, height = pSize
         imgMatr = 255*np.ones((1,height, width), np.uint8)
         return {self.WHITE_PATTERN:imgMatr}
 
     """
         Двойчен шаблон
     """
-    def binary(self, dsize):
-        width, height = dsize
+    def binary(self, pSize):
+        width, height = pSize
         patternCnt = int(math.log2(width))+1
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         imgMatrTrans = 255*np.fromfunction(lambda x,y: (y/(height/pow(2,x)))%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
 
-        return self.multiply(imgMatr,imgMatrTrans,dsize)
+        return self.multiply(imgMatr,imgMatrTrans,pSize)
 
     """
         Gray code шаблон
     """
-    def gray(self, dsize):
-        width, height = dsize
+    def gray(self, pSize):
+        width, height = pSize
         patternCnt = int(math.log2(width))+1
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #<<Горното2>>=(<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
@@ -67,25 +67,25 @@ class Patterns:
         imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
         imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
 
-        return self.multiply(imgMatr,imgMatrTrans,dsize)
+        return self.multiply(imgMatr,imgMatrTrans,pSize)
 
     """
         Stripe шаблон
     """
-    def stripe(self, dsize):
-        width, height = dsize
+    def stripe(self, pSize):
+        width, height = pSize
         # #шаблони е ширината(за всяка линия по един)
         #само по една линия на всеки шаблон отдясно на ляво
         imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        imgMatrTrans = 255*np.fromfunction(lambda x,y: x==y, (width,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
 
-        return self.multiply(imgMatr,imgMatrTrans,dsize)
+        return self.multiply(imgMatr,imgMatrTrans,pSize)
 
     """
         Отместване на фазата
     """
-    def phaseShifting(self, dsize):
-        width, height = dsize
+    def phaseShifting(self, pSize):
+        width, height = pSize
         patternCnt = 3
         shiftStep = 2*np.pi/patternCnt #2pi/3 (това са точно 3 стъпки и четвъртата е 2pi или 0)
         freq = np.pi/16 #честота. Колкото е по-голямо, толква по ситно, иначе по-дълги вълни
@@ -97,12 +97,12 @@ class Patterns:
         return {self.PHASE_PATTERN: self.addHeight(imgMatr, height)}
 
     # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
-    # dsize = (width, height)
-    def multiply(self, pattern, patternTrans, dsize):
-        pattern = self.addHeight(pattern, dsize[1])
+    # pSize = (width, height)
+    def multiply(self, pattern, patternTrans, pSize):
+        pattern = self.addHeight(pattern, pSize[1])
         patternInv = self.invert(pattern)
 
-        patternTrans = self.addHeight(patternTrans, dsize[0])
+        patternTrans = self.addHeight(patternTrans, pSize[0])
         patternTrans = self.transpose(patternTrans)
         patternTransInv = self.invert(patternTrans)
 
