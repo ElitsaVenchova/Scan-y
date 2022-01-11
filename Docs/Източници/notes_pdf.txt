@@ -1,0 +1,68 @@
+projective transformations - транформирането, което аз реално имам при прожектиране
+=========
+ - (@@@)byo3D - Build Your Own 3D Scanner: 3D Photography for Beginners(2009)
+	* Описание как да се направи 3D скенер за начинаещи
+ - (@@@)scia2011 - Projector Calibration by \Inverse Camera Calibration"(2011)
+	* Калибриране на проектора чрез "обратна камера" - без математика и има спевдоалгоритъм
+ - (@@@)3D_Scanning_A_Comprehensive_Survey - 3D Scanning: A Comprehensive Survey(2018)
+	* Преглед на различните методи за сканиране
+=========
+ - (!!!)sensors-17-02383 - Modified Gray-Level Coding Method for Absolute Phase Retrieval(2017)
+	* The n-Ary Gray-Code Method алгоритъм
+ - (!!!)sensors-21-01068-v3 - Surface Reconstruction from Structured Light Images Using Differentiable Rendering(2021)
+	* Reconstruction на повърхност чрез използване на Differentiable Rendering
+ - (!!!)procams2011-final - Simultaneous self-calibration of a projector and a camera using structured light(2011)
+	* Едновременно калибриране на проектор и камера
+ - (!!!)[115-3]Accurate procedure for the calibration of a structured light system - Accurate procedure for the calibration of a structured light system(2003)
+	* Метод за калибриране на structured light system
+=========
+ - (!!)Guehring_Amsterdam - DATA PROCESSING AND CALIBRATION OF A CROSS-PATTERN STRIPE PROJECTOR(2000)
+	* (!!)Комбиниране на Gray Code и Phase shifting
+	* Два метода за калибриране
+ - (!!)BEEI - Camera-projector calibration for near infrared imaging system(2019)
+	* Калибриране на камера и проектор, но май камерата трябва да е близка до инфрачервеното
+ - (!!)1-s2.0-S2212827115003455-main - A New Calibration Method of the Projector in Structured Light Measurement Technology(2015)
+	* Метод за калибриране на проектор с шаблон на шахматна дъска комбинирано с още един шаблон
+ - (!!)2010-IVC - Efficient multiple phase shift patterns for dense 3D acquisition in structured light scanning(2010)
+	* Преглед на метода за фазово отместване
+=========
+ - (!)1406.6595v1 - 3DUNDERWORLD-SLS: An Open-Source Structured-Light Scanning System for Rapid Geometry Acquisition(2014)
+	* Основни неща в structured light system
+ - (!)aop-3-2-128 - Structured-light 3D surface imaging: a tutorial(2010)
+	* Хубаво описание на шаблоните
+	* (!)Алгоритъм за калибриране на камера
+=========
+ - Depth_Map_Extraction_Using_Structured_Light91 - DEPTH MAP EXTRACTION USING STRUCTURED LIGHT(2019)
+	* Хубаво описание на шаблоните
+	* Малко описано за методиката за сканиране с тези шаблони
+ - download - A Practical Structured Light Acquisition System for Point-Based Geometry and Texture(2005)
+	* Конкретна имплементация на скерен. Не е описано подробно
+	* Има добри идеи за доосъвършенстване като pre и post обработка(премахване на сенки и т.н.)
+ - A_low_cost_3D_scanner_based_on_structured_light - A low cost 3D scanner based on structured light(2001)
+	* Реализация на сканер на ниска цена
+
+!!! - да се изпратят като пример за разглеждане
+@@@ - да се прочете
+
+Здравейте,
+
+Опитвам се да направя 3D скенер, което е тема за дипломна работа. Проблемът е, че когато чета статии свързани с темата, не успям да разбера нищо от описаните формули свързани с физика и математика. Двете основни задачи, върху които съм ме концетрирала в момента са калибриране на проектора и реконтрукция(3D сканиране) чрез фазово отместване(phase shifting).
+
+Няколко примерни статии, с които имам проблем с разбирането:
+	- Simultaneous self-calibration of a projector and a camera using structured light - rb.gy/bdio6i
+	- Accurate procedure for the calibration of a structured light system - https://www.researchgate.net/publication/259301805_Accurate_procedure_for_the_calibration_of_a_structured_light_system
+	- Efficient multiple phase shift patterns for dense 3D acquisition in structured light scanning- http://eia.udg.edu/~qsalvi/papers/2010-IVC.pdf
+	- Surface Reconstruction from Structured Light Images Using Differentiable Rendering - https://pdfs.semanticscholar.org/90d6/4adce867f0171e0d8927f8ea49ccf146c451.pdf?_ga=2.94672410.781382453.1641817755-134678225.1641817755
+	- Modified Gray-Level Coding Method for Absolute Phase Retrieval - https://pdfs.semanticscholar.org/2260/da83fe65995f9746235a393b19b0cb7135aa.pdf?_ga=2.128677898.781382453.1641817755-134678225.1641817755
+
+Няколко извадени тема са(не претендирам за точност и пълнота):
+ - фокусна точка и разстояние(focal point and focal length), оптични центрове(optical centers)
+ - преобразуване от една координатна система в друга
+ - калибриране на камера(camera calibration) - вътрешни и външни параметри на камера(intrinsic and extrinsic properties of a camera)
+ - фазово отместване и разгръщане(phase shifting and phase un/wrapping)
+
+Това, което очаквам като краен резултат, е да разбирам основно концепциите описани по-горе и как взаимодействат помежду си за конкретната тема.
+Въпросът ми е дали според вас има с какво да ми помогнете? Смятам, че дори помощ само за основните неща би била полезна.
+
+Поздрави,
+Елица
