@@ -10,13 +10,13 @@ import os
 """
 class CameraPi:
 
-    CALIBRATION_DIR = "Calib" # Директория съдържаща снимките за калибриране и файла с резултата
+    CALIBRATION_DIR = "Camera_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
     CALIBRATION_FILE = "./"+ CALIBRATION_DIR + "/CameraCalibrationResult.json" # Файл с резултата от калибрирането
 
     """
         Прави снимка с камерата и връща името на jpg файла.
     """
-    def takePhoto(self, dir, imageInd):
+    def takePhoto(self, dir, imageInd=""):
         imageFullName = '{0}/image{1}.jpg'.format(dir,imageInd)
         print(imageFullName)
         with PiCamera() as camera:
@@ -85,7 +85,7 @@ class CameraPi:
                 "shape" : gray.shape,
                 "matrix": matrix,
                 "distortion": distortion,
-                "r_vecs": r_vecs,
+                "r_vecs": r_ vecs,
                 "t_vecs": t_vecs
                 }
             projCalibration = {

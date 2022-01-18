@@ -9,6 +9,9 @@ class Projector:
 
     media_player = None
     TMP_PATTERN_FULL_PATH = "/tmp/tmpPattern.jpg"
+    CALIBRATION_DIR = "Projector_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
+    CALIBRATION_FILE = "./"+ CALIBRATION_DIR + "/ProjectorCalibrationResult.json" # Файл с резултата от калибрирането
+    CHESS_BOARD_PATH = "./chessboard.png" # Файл с резултата от калибрирането
 
     # Стартира HDMI порта, ако не е
     def __init__(self):
@@ -23,9 +26,13 @@ class Projector:
 
     # Задава изображение за показване на проектора
     def playImage(self, image):
-        # pass
         cv.imwrite(self.TMP_PATTERN_FULL_PATH, image)
-        media = vlc.Media(self.TMP_PATTERN_FULL_PATH)
+        self.playImageByPath(self.TMP_PATTERN_FULL_PATH)
+        
+    # Задава изображение по определ PATH за показване на проектора
+    def playImageByPath(self, path):
+        # pass
+        media = vlc.Media(path)
         # setting media to the media player
         self.media_player.set_media(media)
         # start playing media

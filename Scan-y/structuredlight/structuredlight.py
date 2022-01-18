@@ -42,7 +42,7 @@ class StructuredLight:
     def cameraCalibrate(self, chessboardSize, chessBlockSize):
         # бял шаблон
         patternCode = Patterns.WHITE
-        patternImgs = self.patterns.genetare(patternCode,self.pSize) # шаблоните
+        patternImgs = self.patterns.genetare(patternCode,self.pSize) # генериране само на бял шаблон
 
         self.projector.start()
         # местим шахматната дъска 20 позии наляво и 20 надясно
@@ -59,6 +59,16 @@ class StructuredLight:
         self.turntable.step(19, self.turntable.CW) # връщане в изходна позиция
         
         self.piCamera.calibrate(chessboardSize, chessBlockSize)
+        self.projector.stop()
+        
+    def projectorCalibrate(self, chessboardSize, chessBlockSize):
+        # прочитане на дъската за калибриране
+        self.projector.start()
+        # пожектиране на шахматна дъска за калибриране на проектора
+        self.projector.playImageByPath(self.projector.CHESS_BOARD_PATH)
+        # заснемане на прожектираната дъска
+        self.piCamera.takePhoto(self.projector.CALIBRATION_DIR)
+        
         self.projector.stop()
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
