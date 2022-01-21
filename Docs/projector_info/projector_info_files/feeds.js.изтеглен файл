@@ -1,0 +1,4 @@
+window.live_feeds = {
+                end: 0,
+                items: null
+            };
