@@ -41,4 +41,5 @@ class Projector:
     # Спира VLC
     def stop(self):
         # pass
+        self.media_player.toggle_fullscreen()
         self.media_player.stop()

@@ -1,4 +1,4 @@
-import cv2
+import cv2 as cv
 import numpy as np
 import math
 
@@ -39,12 +39,30 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-    def cameraCalibrate(self, chessboardSize, chessBlockSize):
+    # Калибриране на камерата.
+    # type: A-автоматичен,M-ръчен
+    def cameraCalibrate(self, chessboardSize, chessBlockSize, calibType='A'):
         # бял шаблон
         patternCode = Patterns.WHITE
         patternImgs = self.patterns.genetare(patternCode,self.pSize) # генериране само на бял шаблон
 
-        self.projector.start()
+#         self.projector.start()
+#         if calibType == 'M':
+#             self.manualCameraCalibrate(patternImgs)
+#         else:
+#             self.autoCameraCalibrate(patternImgs)
+#         
+#         self.projector.stop()
+        self.piCamera.calibrate(chessboardSize, chessBlockSize)
+        
+    def manualCameraCalibrate(self, patternImgs):
+        pattType, patt = list(patternImgs.items())[0]
+        print(pattType)
+        for i in range(0, 20):
+            input('Fix image and press <<Enter>>!')#self.waitKeyPressForPhoto()
+            self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
+    
+    def autoCameraCalibrate(self, patternImgs):
         # местим шахматната дъска 20 позии наляво и 20 надясно
         # резултатът е 40 изображения за калибриране
         for i in range(0, 20):
@@ -58,9 +76,7 @@ class StructuredLight:
             self.turntable.step(1, self.turntable.CCW)# стъпка обратно по часовниковата стрелка
         self.turntable.step(19, self.turntable.CW) # връщане в изходна позиция
         
-        self.piCamera.calibrate(chessboardSize, chessBlockSize)
-        self.projector.stop()
-        
+    # Калибриране на проектора
     def projectorCalibrate(self, chessboardSize, chessBlockSize):
         # прочитане на дъската за калибриране
         self.projector.start()
@@ -74,7 +90,7 @@ class StructuredLight:
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
         for i,img in enumerate(patternImgs):
-            # cv2.imshow('image',img)
+            # cv.imshow('image',img)
             self.projector.playImage(img)
             self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
-        cv2.destroyAllWindows()
+        cv.destroyAllWindows()

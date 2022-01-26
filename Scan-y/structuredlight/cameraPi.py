@@ -85,7 +85,7 @@ class CameraPi:
                 "shape" : gray.shape,
                 "matrix": matrix,
                 "distortion": distortion,
-                "r_vecs": r_ vecs,
+                "r_vecs": r_vecs,
                 "t_vecs": t_vecs
                 }
             projCalibration = {
