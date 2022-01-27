@@ -46,10 +46,10 @@ class StructuredLight:
         patternImgs = self.patterns.genetare(patternCode,self.pSize) # генериране само на бял шаблон
 
         self.projector.start()
-        if calibType == 'M':
-            self.manualCameraCalibrate(patternImgs)
-        else:
-            self.autoCameraCalibrate(patternImgs)
+#         if calibType == 'M':
+#             self.manualCameraCalibrate(patternImgs)
+#         else:
+#             self.autoCameraCalibrate(patternImgs)
 
         self.projector.stop()
         self.piCamera.calibrate(self.piCamera.CALIBRATION_DIR, chessboardSize, chessBlockSize)
@@ -81,6 +81,7 @@ class StructuredLight:
 
         self.projector.start()
         for i in range(0, 20):
+            print(i)
             input('Fix image and press <<Enter>>!')
             self.scanCurrentStep(patt, self.projector.CALIBRATION_DIR, pattType, i)
 
@@ -88,6 +89,7 @@ class StructuredLight:
         self.piCamera.calibrate(self.projector.CALIBRATION_DIR,chessboardSize, 1) #Не може да се определи големината на шахматния квадрат
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
+        print(stepNo)
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
         for i,img in enumerate(patternImgs):
             # cv.imshow('image',img)

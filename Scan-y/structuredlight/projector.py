@@ -20,7 +20,7 @@ class Projector:
     # стартира VLC и задава full screen
     def start(self):
         # pass
-        self.media_player = vlc.MediaPlayer()
+        self.media_player = vlc.MediaPlayer('--vout mmal_vout')
         self.media_player.toggle_fullscreen()
 
     # Задава изображение за показване на проектора

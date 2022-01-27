@@ -2,8 +2,6 @@
 Structure light 3D scanner
 
 @TODO:
-    * Калибриране на камерата като се залепи големия лист със шахматна дъска на картона, на страната, която сега не се вижда.
-        * да се направят няколк снимки с различна ориентация на дъската
     * Калибриране на проектор - да се прожектира шахматна дъска, която е принтирана и залепена на гърба. Да се засмене с камерата и да се калибрира проектора от нея.
     * Ново сканиране на обекта
         * Да се направи ОБРАТНО изкривяване на шаблона така, че като се прожектира, той да е правилен
@@ -17,7 +15,7 @@ Structure light 3D scanner
 """
 import cv2 as cv
 import numpy as np
-# import structuredlight as sl
+import structuredlight as sl
 import math
 import argparse
 
@@ -52,10 +50,13 @@ if __name__=="__main__":
     if args.action == None:
         args.action = input('What action will be performed? S-scanning, CC-camera calibration, PC-projector calibration: ')
     if args.pattern == None:
-        args.pattern = int(input('Pattern for scanning:'
-                            '0-WHITE, 1-BINARY, 2-STRIPE, 3-GRAY_CODE, 4-PHASE_SHIFTING, 5(default)-GRAY_CODE_AND_PHASE_SHIFTING: '))
-        if args.pattern == None:
+        args.pattern = input('Pattern for scanning:'
+                            '0-WHITE, 1-BINARY, 2-STRIPE, 3-GRAY_CODE, 4-PHASE_SHIFTING, 5(default)-GRAY_CODE_AND_PHASE_SHIFTING: ')
+        print(args.pattern)
+        if args.pattern == str():
             args.pattern = 5
+        else:
+            args.pattern = int(args.pattern)
     if args.calib_type == None:
         args.calib_type = input('Calibration type of camera: A(default)-automatic, M-manual: ')
         if args.calib_type == None:

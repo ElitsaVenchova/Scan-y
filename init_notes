@@ -1,3 +1,5 @@
+задаване на статично IP
+
 sudo apt update
 sudo apt upgrade
 sudo apt install libreoffice

@@ -10,7 +10,7 @@ import os
 """
 class CameraPi:
 
-    calibrationDir = "Camera_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
+    CALIBRATION_DIR = "Camera_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
     CALIBRATION_FILE = "/CalibResult.json" # Файл с резултата от калибрирането
     CALIBRATION_RES_IMAGE = "/CalibResult.jpg" # Файл с резултата от калибрирането
 
@@ -53,6 +53,8 @@ class CameraPi:
         # Масиви за съхранение точките на обекта и точките в избражението
         objpoints = [] # 3d point in real world space
         imgpoints = [] # 2d points in image plane.
+        
+        matched_pattern_cnt = 0 #брой намерени шаблони. Трябва да са поне 12, за да е коректно калибрирането.
 
         # взима имената на изображениета *.jpg от директорията сортирани по естествен начин
         images = natsorted(glob.glob("./"+calibrationDir + '/image*.jpg'))
@@ -60,6 +62,7 @@ class CameraPi:
             # Намиране на ъглите на квадратите
             ret, corners = self.findChessboardCorners(fname, chessboardSize)
             if ret == True:
+                matched_pattern_cnt += 1
                 lastImageWithPattern = fname
                 print("Found pattern in " + fname)
                 # намира по-точните пиксел на ъгълите(изобр.,ъгли, 1/2 от страничната
@@ -74,8 +77,9 @@ class CameraPi:
             else:
                 os.remove(fname)
 
-        if lastImageWithPattern is not None:
-            img = cv.imread(fname)
+        if lastImageWithPattern is not None and matched_pattern_cnt >= 12:
+            lastImageWithPattern='./Camera_Calib/image0White0.jpg'
+            img = cv.imread(lastImageWithPattern)
             gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
             # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
             # ред(от -1)(?),без матрица на изображението,без коеф. на изкривяване)
@@ -83,19 +87,32 @@ class CameraPi:
             # изходен вектор на ротиране(r_vecs),изходен вектор на транслиране(t_vecs)
             ret, matrix, distortion, r_vecs, t_vecs = cv.calibrateCamera(
                 objpoints, imgpoints, gray.shape[::-1], None, None)
+            
+            # Изчисляване на грешката
+            mean_error = 0
+            for i in range(len(objpoints)):
+                imgpoints2, _ = cv.projectPoints(objpoints[i], r_vecs[i], t_vecs[i], matrix, distortion)
+                error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+                mean_error += error
+            err = mean_error/len(objpoints)
+            print( "total error: {}".format(err))
             # запиване на резултата от калибрирането
             calibrationRes = {
                 "shape" : gray.shape,
                 "matrix": matrix,
                 "distortion": distortion,
                 "r_vecs": r_vecs,
-                "t_vecs": t_vecs
+                "t_vecs": t_vecs,
+                "error": err
                 }
             self.writeCalibrationResult(calibrationDir,calibrationRes)
 
             # Прочитане на резултата от калибрирането
             calibrationRes = self.readCalibrationResult(calibrationDir)
-            img = self.calibrateImage(img, calibrationDir, calibrationRes)
+            img = self.undistortImage(img, calibrationDir, calibrationRes)
+            
+        else:
+            raise ValueError('Not enough matched patterns({0})!'.format(matched_pattern_cnt))
 
     # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
     # return -> ret: дали са намерени ъгли, corners: координати на ъглите
@@ -106,7 +123,7 @@ class CameraPi:
         return cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
 
     # Калибриране на изображението
-    def calibrateImage(self, calibrationDir, img, calibrationRes):
+    def undistortImage(self, img, calibrationDir, calibrationRes):
         h,w = img.shape[:2] # размерите на изображението
         newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(calibrationRes["matrix"],
                                                             calibrationRes["distortion"],
@@ -131,6 +148,7 @@ class CameraPi:
         fs.write('shape', calibrationRes["shape"])
         fs.write('matrix', calibrationRes["matrix"])
         fs.write('distortion', calibrationRes["distortion"])
+        fs.write('error', calibrationRes["error"])
         # fs.write('cam_r_vecs', camCalibration["r_vecs"])
         # fs.write('cam_t_vecs', camCalibration["r_vecs"])
         fs.release()
@@ -145,7 +163,8 @@ class CameraPi:
         calibrationRes = {
             "shape" : fs.getNode('shape').mat(),
             "matrix" : fs.getNode('matrix').mat(),
-            "distortion" : fs.getNode('distortion').mat()
+            "distortion" : fs.getNode('distortion').mat(),
+            "error" : fs.getNode('error')
             # "r_vecs" : fs.getNode('cam_r_vecs').mat(),
             # "t_vecs" : fs.getNode('cam_t_vecs').mat()
             }
