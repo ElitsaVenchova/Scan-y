@@ -17,19 +17,50 @@ Structure light 3D scanner
 """
 import cv2 as cv
 import numpy as np
-import structuredlight as sl
+# import structuredlight as sl
 import math
+import argparse
 
-def main():
-    patternCode = sl.Patterns.GRAY_CODE
-    cSize =(1920,1080) # размер на камерата
-    pSize =(615,360) #8,4 # размер на проектора
+def main(args):
+    pSize =(615,360) #размер на проектора
     chessboardSize = (8,6)
     chessBlockSize = 16 # mm
 
-    scan = sl.StructuredLight(cSize, pSize)
-    #scan.scan(patternCode)
-    scan.cameraCalibrate(chessboardSize, chessBlockSize, 'M')
+    scan = sl.StructuredLight(pSize)
+    if args.action == 'S':
+        patternCode = args.pattern
+        scan.scan(patternCode)
+    elif args.action == 'CC':
+        scan.cameraCalibrate(chessboardSize, chessBlockSize, args.calib_type)
+    elif args.action == 'PC':
+        scan.projectorCalibrate(chessboardSize)
+    else:
+        raise ValueError('Bad action code!')
+
+if __name__=="__main__":
+    parser = argparse.ArgumentParser(
+        description='Scan-y 3D structured light scanner\n',
+        formatter_class=argparse.RawTextHelpFormatter)
+    # nargs='?' - позволява парсването на параметрите, ако нищо не е подадено
+    parser.add_argument('action', type=str, nargs='?',help='What action will be performed? S-scanning, CC-camera calibration, PC-projector calibration')
+    parser.add_argument('pattern', type=int, nargs='?',help='Pattern for scanning.'
+                                '0-WHITE, 1-BINARY, 2-STRIPE, 3-GRAY_CODE, 4-PHASE_SHIFTING, 5(default)-GRAY_CODE_AND_PHASE_SHIFTING')
+    parser.add_argument('calib_type', type=str, nargs='?',help='Calibration type of camera: A(default)-automatic, M-manual')
+
+    args = parser.parse_args()
+
+    if args.action == None:
+        args.action = input('What action will be performed? S-scanning, CC-camera calibration, PC-projector calibration: ')
+    if args.pattern == None:
+        args.pattern = int(input('Pattern for scanning:'
+                            '0-WHITE, 1-BINARY, 2-STRIPE, 3-GRAY_CODE, 4-PHASE_SHIFTING, 5(default)-GRAY_CODE_AND_PHASE_SHIFTING: '))
+        if args.pattern == None:
+            args.pattern = 5
+    if args.calib_type == None:
+        args.calib_type = input('Calibration type of camera: A(default)-automatic, M-manual: ')
+        if args.calib_type == None:
+            args.pattern = 'A'
+    main(args)
 
     # patterns = sl.Patterns() # шаблони
     # patternsArr = patterns.genetare(patternCode,dsize) # шаблоните
@@ -38,6 +69,3 @@ def main():
     #         cv.imshow(key,img)
     #         cv.waitKey(0)
     #     cv.destroyAllWindows()
-
-if __name__=="__main__":
-    main()

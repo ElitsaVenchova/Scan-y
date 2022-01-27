@@ -10,8 +10,9 @@ import os
 """
 class CameraPi:
 
-    CALIBRATION_DIR = "Camera_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
-    CALIBRATION_FILE = "./"+ CALIBRATION_DIR + "/CameraCalibrationResult.json" # Файл с резултата от калибрирането
+    calibrationDir = "Camera_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
+    CALIBRATION_FILE = "/CalibResult.json" # Файл с резултата от калибрирането
+    CALIBRATION_RES_IMAGE = "/CalibResult.jpg" # Файл с резултата от калибрирането
 
     """
         Прави снимка с камерата и връща името на jpg файла.
@@ -32,8 +33,10 @@ class CameraPi:
         chessboardSize: Размерите на шаха.Трябва да са точни иначе findChessboardCorners ще върне false.
         (8,6)
         chessBlockSize: Ширина на едно кврадче от дъската
+        !!!ВАЖНО: В снимките за калибиране трябва да такива, при които дъската е много близо до ръба, защото иначе калибриране е грешно и изкривява крайното изображениета
+            * https://answers.opencv.org/question/28438/undistortion-at-far-edges-of-image/
     """
-    def calibrate(self, chessboardSize, chessBlockSize):
+    def calibrate(self, calibrationDir, chessboardSize, chessBlockSize):
         # Критерии за спиране на търсенето. Използва се в cornerSubPix, което намира по-точно ъглите на дъската
         # (type:COUNT,EPS or COUNT + EPS(2+1),maxCount iteration,
         # epsilon: при каква точност или промяна на стойност алгоритъма спира)
@@ -52,10 +55,10 @@ class CameraPi:
         imgpoints = [] # 2d points in image plane.
 
         # взима имената на изображениета *.jpg от директорията сортирани по естествен начин
-        images = natsorted(glob.glob("./"+self.CALIBRATION_DIR + '/image*.jpg'))
+        images = natsorted(glob.glob("./"+calibrationDir + '/image*.jpg'))
         for fname in images:
             # Намиране на ъглите на квадратите
-            ret, corners = self.findChessboardCorners(fname, chessboardSize) 
+            ret, corners = self.findChessboardCorners(fname, chessboardSize)
             if ret == True:
                 lastImageWithPattern = fname
                 print("Found pattern in " + fname)
@@ -81,27 +84,19 @@ class CameraPi:
             ret, matrix, distortion, r_vecs, t_vecs = cv.calibrateCamera(
                 objpoints, imgpoints, gray.shape[::-1], None, None)
             # запиване на резултата от калибрирането
-            camCalibration = {
+            calibrationRes = {
                 "shape" : gray.shape,
                 "matrix": matrix,
                 "distortion": distortion,
                 "r_vecs": r_vecs,
                 "t_vecs": t_vecs
                 }
-            projCalibration = {
-                "shape" : np.array([0]),
-                "matrix": np.array([0]),
-                "distortion": np.array([0]),
-                "r_vecs": np.array([0]),
-                "t_vecs": np.array([0])
-                }
-            self.writeCalibrationResult(camCalibration, projCalibration)
+            self.writeCalibrationResult(calibrationDir,calibrationRes)
 
             # Прочитане на резултата от калибрирането
-            camCalibration, projCalibration = self.readCalibrationResult()
-            img = self.calibrateImage(img, camCalibration)
-            
-    
+            calibrationRes = self.readCalibrationResult(calibrationDir)
+            img = self.calibrateImage(img, calibrationDir, calibrationRes)
+
     # Намиране на ъглите на квадратите(сиво изображение, размер на дъска, без флагове)
     # return -> ret: дали са намерени ъгли, corners: координати на ъглите
     def findChessboardCorners(self, fname, chessboardSize):
@@ -111,62 +106,47 @@ class CameraPi:
         return cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
 
     # Калибриране на изображението
-    def calibrateImage(self, img, camCalibration):
+    def calibrateImage(self, calibrationDir, img, calibrationRes):
         h,w = img.shape[:2] # размерите на изображението
-        newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(camCalibration["matrix"],
-                                                            camCalibration["distortion"],
+        newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(calibrationRes["matrix"],
+                                                            calibrationRes["distortion"],
                                                             (w,h),0,(w,h))
         # Премахване на изкривяването
-        dst = cv.undistort(img, camCalibration["matrix"],
-                           camCalibration["distortion"], None, newCameraMatrix)
+        dst = cv.undistort(img, calibrationRes["matrix"],
+                           calibrationRes["distortion"], None, newCameraMatrix)
         # Изрязване на изображението
         x,y,w,h = roi
         dst = dst[y:y+h, x:x+w]
-        cv.imwrite("./"+self.CALIBRATION_DIR + '/calibResult.jpg', dst)
+        cv.imwrite("./"+ calibrationDir + self.CALIBRATION_RES_IMAGE, dst)
         print("Done!")
         return dst
 
     """
         Записесне на резултатите от калбирането във файл
     """
-    def writeCalibrationResult(self, camCalibration, projCalibration):
+    def writeCalibrationResult(self, calibrationDir, calibrationRes):
         # отваряне на файл за записване на резултата от калибрацията
-        fs = cv.FileStorage(self.CALIBRATION_FILE, cv.FILE_STORAGE_WRITE)
+        fs = cv.FileStorage("./"+ calibrationDir + self.CALIBRATION_FILE, cv.FILE_STORAGE_WRITE)
         # Параметри на камерата
-        fs.write('cam_shape', camCalibration["shape"])
-        fs.write('cam_matrix', camCalibration["matrix"])
-        fs.write('cam_distortion', camCalibration["distortion"])
+        fs.write('shape', calibrationRes["shape"])
+        fs.write('matrix', calibrationRes["matrix"])
+        fs.write('distortion', calibrationRes["distortion"])
         # fs.write('cam_r_vecs', camCalibration["r_vecs"])
         # fs.write('cam_t_vecs', camCalibration["r_vecs"])
-        # Параметри на проектора
-        fs.write('proj_shape', projCalibration["shape"])
-        fs.write('proj_matrix', projCalibration["matrix"])
-        fs.write('proj_distortiont', projCalibration["distortion"])
-        # fs.write('proj_r_vecs', projCalibration["r_vecs"])
-        # fs.write('proj_t_vecs', projCalibration["t_vecs"])
         fs.release()
-
 
     """
         Прочитане на резултатите от калбирането
     """#np.asarray(cameraCalib["matrix"]) #възтановявне на типа да бъде Numpy array
-    def readCalibrationResult(self):
+    def readCalibrationResult(self, calibrationDir):
         # отваряне на файл за записване на резултата от калибрацията
-        fs = cv.FileStorage(self.CALIBRATION_FILE, cv.FILE_STORAGE_READ)
+        fs = cv.FileStorage("./"+ calibrationDir + self.CALIBRATION_FILE, cv.FILE_STORAGE_READ)
         # Параметри на камерата
-        camCalibration = {
-            "shape" : fs.getNode('cam_shape').mat(),
-            "matrix" : fs.getNode('cam_matrix').mat(),
-            "distortion" : fs.getNode('cam_distortion').mat()
+        calibrationRes = {
+            "shape" : fs.getNode('shape').mat(),
+            "matrix" : fs.getNode('matrix').mat(),
+            "distortion" : fs.getNode('distortion').mat()
             # "r_vecs" : fs.getNode('cam_r_vecs').mat(),
             # "t_vecs" : fs.getNode('cam_t_vecs').mat()
             }
-        # Параметри на проектора
-        projCalibration = {
-            "shape" : fs.getNode('proj_shape').mat(),
-            "matrix": fs.getNode('proj_matrix').mat(),
-            "distortion": fs.getNode('proj_distortiont').mat()
-            # "r_vecs": fs.getNode('proj_r_vecs').mat(),
-            # "t_vecs": fs.getNode('proj_t_vecs').mat()
-            }
-        return (camCalibration, projCalibration)
+        return calibrationRes

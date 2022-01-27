@@ -11,6 +11,7 @@ class Patterns:
     STRIPE = 2
     GRAY_CODE = 3
     PHASE_SHIFTING = 4
+    GRAY_CODE_AND_PHASE_SHIFTING = 5
 
     WHITE_PATTERN = "White"
     IMAGE_PATTERN = "Img"
@@ -31,6 +32,10 @@ class Patterns:
             return self.gray(pSize)
         elif patternCode == self.PHASE_SHIFTING:
             return self.phaseShifting(pSize)
+        elif patternCode == self.GRAY_CODE_AND_PHASE_SHIFTING:
+            patterns = self.gray(pSize)
+            patterns[self.PHASE_PATTERN] = self.phaseShifting(pSize)[self.PHASE_PATTERN]
+            return patterns
         else:
             raise ValueError('Bad pattern code!')
 
