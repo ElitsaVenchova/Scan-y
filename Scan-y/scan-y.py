@@ -11,6 +11,8 @@ Structure light 3D scanner
             * са се прочете как се прави point cloud - .xyz(?)
             * да се прочете как от point cloud се прави point mesh - файловеи формати .ply, .stl, .obj
     * Да се оправи RuntimeWarning: This channel is already in use, continuing anyway.  Use GPIO.setwarnings(False) to disable warnings.
+    * Да се оправи: libEGL warning: DRI2: failed to authenticate
+                    [01bf42e8] mmal_xsplitter vout display error: Failed to open Xsplitter:opengles2 module
     * Web app
 """
 import cv2 as cv

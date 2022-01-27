@@ -10,7 +10,7 @@ class Projector:
     media_player = None
     TMP_PATTERN_FULL_PATH = "/tmp/tmpPattern.jpg"
     CALIBRATION_DIR = "Projector_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
-    CHESS_BOARD_PATTERN = "/chessboard.png" # Файл с резултата от калибрирането
+    CHESS_BOARD_PATTERN = "/chessboard.jpg" # Файл с резултата от калибрирането
 
     # Стартира HDMI порта, ако не е
     def __init__(self):

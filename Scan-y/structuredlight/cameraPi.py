@@ -78,7 +78,6 @@ class CameraPi:
                 os.remove(fname)
 
         if lastImageWithPattern is not None and matched_pattern_cnt >= 12:
-            lastImageWithPattern='./Camera_Calib/image0White0.jpg'
             img = cv.imread(lastImageWithPattern)
             gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
             # Калибриране на камерата(ъгли в обект,ъгли в изображението,размерите на изображението в обратен
