@@ -44,44 +44,43 @@ class StructuredLight:
         # бял шаблон
         patternCode = Patterns.WHITE
         patternImgs = self.patterns.genetare(patternCode,self.pSize) # генериране само на бял шаблон
+        pattType, patt = list(patternImgs.items())[0]
 
         self.projector.start()
-#         if calibType == 'M':
-#             self.manualCameraCalibrate(patternImgs)
-#         else:
-#             self.autoCameraCalibrate(patternImgs)
+        if calibType == 'M':
+            self.manualCameraCalibrate(patternImgs,pattType, patt)
+        else:
+            self.autoCameraCalibrate(patternImgs,pattType, patt)
 
         self.projector.stop()
         self.piCamera.calibrate(self.piCamera.CALIBRATION_DIR, chessboardSize, chessBlockSize)
 
-    def manualCameraCalibrate(self, patternImgs):
+    def manualCameraCalibrate(self, patternImgs,pattType, patt):
         pattType, patt = list(patternImgs.items())[0]
         for i in range(0, 20):
             input('Fix image and press <<Enter>>!')
             self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
 
-    def autoCameraCalibrate(self, patternImgs):
+    def autoCameraCalibrate(self, patternImgs,pattType, patt):
         # местим шахматната дъска 20 позии наляво и 20 надясно
         # резултатът е 40 изображения за калибриране
         for i in range(0, 20):
-            for pattType, patt in patternImgs.items():
-                self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
+            self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
             self.turntable.step(1, self.turntable.CW)# стъпка по часовниковата стрелка
         self.turntable.step(20, self.turntable.CCW) # връщане в изходна позиция
         for i in range(20, 40):
-            for pattType, patt in patternImgs.items():
-                self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
+            self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
             self.turntable.step(1, self.turntable.CCW)# стъпка обратно по часовниковата стрелка
         self.turntable.step(19, self.turntable.CW) # връщане в изходна позиция
 
     # Калибриране на проектора
     def projectorCalibrate(self, chessboardSize):
-        pattType = 'Chessboard'
-        patt = cv.imread("./"+ self.projector.CALIBRATION_DIR + self.projector.CHESS_BOARD_PATTERN, cv.IMREAD_GRAYSCALE)
+        patternCode = Patterns.CHESS_BOARD
+        patternImgs = self.patterns.genetare(patternCode,self.pSize,chessboardSize) # генериране само на бял шаблон
+        pattType, patt = list(patternImgs.items())[0]
 
         self.projector.start()
         for i in range(0, 20):
-            print(i)
             input('Fix image and press <<Enter>>!')
             self.scanCurrentStep(patt, self.projector.CALIBRATION_DIR, pattType, i)
 

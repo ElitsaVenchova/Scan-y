@@ -12,6 +12,7 @@ class Patterns:
     GRAY_CODE = 3
     PHASE_SHIFTING = 4
     GRAY_CODE_AND_PHASE_SHIFTING = 5
+    CHESS_BOARD = 6
 
     WHITE_PATTERN = "White"
     IMAGE_PATTERN = "Img"
@@ -19,9 +20,10 @@ class Patterns:
     TRANS_PATTERN = "ImgTrans"
     TRANS_INV_PATTERN = "ImgTransInv"
     PHASE_PATTERN = "Phase"
+    CHESS_BOARD_PATTERN = "Chessboard"
 
     # Генериране на шаблон според подадения код
-    def genetare(self, patternCode, pSize):
+    def genetare(self, patternCode, pSize, chessboardSize=(0,0)):
         if patternCode == self.WHITE:
             return self.white(pSize)
         elif patternCode == self.BINARY:
@@ -36,6 +38,8 @@ class Patterns:
             patterns = self.gray(pSize)
             patterns[self.PHASE_PATTERN] = self.phaseShifting(pSize)[self.PHASE_PATTERN]
             return patterns
+        elif patternCode == self.CHESS_BOARD:
+            return self.cheasboard(pSize,chessboardSize)
         else:
             raise ValueError('Bad pattern code!')
 
@@ -101,6 +105,26 @@ class Patterns:
 
         return {self.PHASE_PATTERN: self.addHeight(imgMatr, height)}
 
+    """
+        Шахматна дъска за калибриране на проектора
+        pSize - размери на проекториа
+        chessboardSize - бр. пресичания на черен и черен квадрат по диагонал
+    """
+    def chessboard(self, pSize, chessboardSize):
+        width, height = pSize
+        rowsCnt,colsCnt = (chessboardSize[0]+1,chessboardSize[1]+1)#бр. квадрати по ширина и дължина, за да удовлетовори chessboardSize
+        squareSize = int(min(width/rowsCnt, height/colsCnt))
+        rightPad,bottomPad = (width-rowsCnt*squareSize,height-colsCnt*squareSize) # оставащо празно пространсвто в дясно и долу
+
+        imgMatr = 255*np.fromfunction(lambda y,x: ((x/squareSize).astype(int)%2!=(y/squareSize).astype(int)%2), (height,width), dtype=float).astype(np.uint8)
+        # Центриране на дъската за естетичност
+        imgMatr[-bottomPad:,:] = 255 # излишните квадрати отдолу стават бели
+        imgMatr[:,-rightPad:] = 255 # излишните квадрати отдясно стават бели
+        imgMatr = np.roll(imgMatr, int(bottomPad/2), axis=0) #прехвърлят се пикселите отдолу->горе, за да се получи еднаква дупка от двете страни
+        imgMatr = np.roll(imgMatr, int(rightPad/2), axis=1) #прехвърлят се пикселите от дясно->в ляво, за да се получи еднаква дупка от двете страни
+
+        return {self.CHESS_BOARD_PATTERN: imgMatr}
+
     # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
     # pSize = (width, height)
     def multiply(self, pattern, patternTrans, pSize):
@@ -121,8 +145,8 @@ class Patterns:
     # всеки ред imgMatr съдържа шаблон, който трябва да се размножи по редовете до height
     def addHeight(self, imgMatr, height):
         x, y = imgMatr.shape
-        imgMatr = np.tile(imgMatr, height) # Повтаря се всеки ред от матрицата #пъти за височината(пр. h=2 и [[1,2],[3,4]]-> [[1,2,1,2],[3,4,3,4]])
-        imgMatr = np.reshape(imgMatr,(x,height,y)) # всеки ред се d1 се превръща в dHeight(пр от горе -> [[[1,2],[1,2]],[[3,4],[3,4]]])
+        imgMatr = np.tile(imgMatr, height) # Повтаря се всеки ред от матрицата #пъти за височината(пр. h=2,бр.шабломи=2 и [[1,2],[3,4]]-> [[1,2,1,2],[3,4,3,4]])
+        imgMatr = np.reshape(imgMatr,(x,height,y)) # всеки ред се d1 се превръща в dHeight(пр. от горе -> [[[1,2],[1,2]],[[3,4],[3,4]]])
         return np.array(imgMatr,dtype=np.uint8) # връща се array, за да може да се прожектира от cv2.imshow
 
     # обръщане на черно-бял шаблон. Черното става бяла и обратното
