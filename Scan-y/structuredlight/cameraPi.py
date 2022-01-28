@@ -59,6 +59,7 @@ class CameraPi:
         # взима имената на изображениета *.jpg от директорията сортирани по естествен начин
         images = natsorted(glob.glob("./"+calibrationDir + '/image*.jpg'))
         for fname in images:
+            print(fname)
             # Намиране на ъглите на квадратите
             ret, corners = self.findChessboardCorners(fname, chessboardSize)
             if ret == True:
@@ -75,7 +76,8 @@ class CameraPi:
                 objpoints.append(objp)
                 imgpoints.append(corners)
             else:
-                os.remove(fname)
+                # @TODO: Пременно е махнато триенето на изображенията без шаблон
+                pass #os.remove(fname)
 
         if lastImageWithPattern is not None and matched_pattern_cnt >= 12:
             img = cv.imread(lastImageWithPattern)

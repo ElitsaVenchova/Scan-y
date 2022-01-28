@@ -6,7 +6,7 @@ camera=PiCamera()
 try:
     #camera.rotation = 180
     camera.start_preview(fullscreen=False,window=(50,80,1000,1200))#alpha=230,
-    sleep(160)
+    sleep(5)
 #--------------Photo
     camera.capture('image.jpg')
 #--------------Video

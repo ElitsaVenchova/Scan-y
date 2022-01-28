@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 import math
+import os
 
 from .patterns import Patterns
 from .cameraPi import CameraPi
@@ -56,7 +57,6 @@ class StructuredLight:
         self.piCamera.calibrate(self.piCamera.CALIBRATION_DIR, chessboardSize, chessBlockSize)
 
     def manualCameraCalibrate(self, patternImgs,pattType, patt):
-        pattType, patt = list(patternImgs.items())[0]
         for i in range(0, 20):
             input('Fix image and press <<Enter>>!')
             self.scanCurrentStep(patt, self.piCamera.CALIBRATION_DIR, pattType, i)
@@ -88,10 +88,8 @@ class StructuredLight:
         self.piCamera.calibrate(self.projector.CALIBRATION_DIR,chessboardSize, 1) #Не може да се определи големината на шахматния квадрат
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
-        print(stepNo)
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
         for i,img in enumerate(patternImgs):
             # cv.imshow('image',img)
             self.projector.playImage(img)
-            self.piCamera.takePhoto(dir,"{0}{1}{2}".format(stepNo,patternName,i))
-        cv.destroyAllWindows()
+            self.piCamera.takePhoto(dir,'{0}{1}{2}'.format(stepNo,patternName,i))

@@ -25,6 +25,15 @@ def main(args):
     pSize =(615,360) #размер на проектора
     chessboardSize = (8,6)
     chessBlockSize = 16 # mm
+    
+#     patterns = sl.Patterns() # шаблони
+#     patternsArr = patterns.genetare(6,pSize,chessboardSize) # шаблоните
+#     for key, pattr in patternsArr.items():
+#         for i,img in enumerate(pattr):
+#             print(img.shape)
+#             cv.imshow(key,img)
+#             cv.waitKey(0)
+#         cv.destroyAllWindows()
 
     scan = sl.StructuredLight(pSize)
     if args.action == 'S':
@@ -64,11 +73,3 @@ if __name__=="__main__":
         if args.calib_type == None:
             args.pattern = 'A'
     main(args)
-
-    # patterns = sl.Patterns() # шаблони
-    # patternsArr = patterns.genetare(patternCode,dsize) # шаблоните
-    # for key, pattr in patternsArr.items():
-    #     for i,img in enumerate(pattr):
-    #         cv.imshow(key,img)
-    #         cv.waitKey(0)
-    #     cv.destroyAllWindows()

@@ -39,7 +39,7 @@ class Patterns:
             patterns[self.PHASE_PATTERN] = self.phaseShifting(pSize)[self.PHASE_PATTERN]
             return patterns
         elif patternCode == self.CHESS_BOARD:
-            return self.cheasboard(pSize,chessboardSize)
+            return self.chessboard(pSize,chessboardSize)
         else:
             raise ValueError('Bad pattern code!')
 
@@ -116,12 +116,16 @@ class Patterns:
         squareSize = int(min(width/rowsCnt, height/colsCnt))
         rightPad,bottomPad = (width-rowsCnt*squareSize,height-colsCnt*squareSize) # оставащо празно пространсвто в дясно и долу
 
+        # (*) (x/squareSize)%2 - Редуват се черно/бяло през squareSize по x
+        # (#) (y/squareSize)%2 - Редуват се черно/бяло през squareSize по x
+        # (*)!=(#) - xor на двете стойности за получаване на квадрати
         imgMatr = 255*np.fromfunction(lambda y,x: ((x/squareSize).astype(int)%2!=(y/squareSize).astype(int)%2), (height,width), dtype=float).astype(np.uint8)
         # Центриране на дъската за естетичност
         imgMatr[-bottomPad:,:] = 255 # излишните квадрати отдолу стават бели
         imgMatr[:,-rightPad:] = 255 # излишните квадрати отдясно стават бели
         imgMatr = np.roll(imgMatr, int(bottomPad/2), axis=0) #прехвърлят се пикселите отдолу->горе, за да се получи еднаква дупка от двете страни
         imgMatr = np.roll(imgMatr, int(rightPad/2), axis=1) #прехвърлят се пикселите от дясно->в ляво, за да се получи еднаква дупка от двете страни
+        imgMatr = np.reshape(imgMatr,(1,height,width))
 
         return {self.CHESS_BOARD_PATTERN: imgMatr}
 
