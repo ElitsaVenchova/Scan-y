@@ -113,7 +113,7 @@ class Patterns:
     def chessboard(self, pSize, chessboardSize):
         width, height = pSize
         rowsCnt,colsCnt = (chessboardSize[0]+1,chessboardSize[1]+1)#бр. квадрати по ширина и дължина, за да удовлетовори chessboardSize
-        squareSize = int(min(width/rowsCnt, height/colsCnt))
+        squareSize = int(min(width/rowsCnt, height/colsCnt))-10
         rightPad,bottomPad = (width-rowsCnt*squareSize,height-colsCnt*squareSize) # оставащо празно пространсвто в дясно и долу
 
         # (*) (x/squareSize)%2 - Редуват се черно/бяло през squareSize по x
