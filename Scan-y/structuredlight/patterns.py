@@ -4,17 +4,19 @@ import math
 """
     Генериране на шаблони за сканиране
 """
-class Patterns:
+class Pattern
 
     WHITE = 0
-    BINARY = 1
-    STRIPE = 2
-    GRAY_CODE = 3
-    PHASE_SHIFTING = 4
-    GRAY_CODE_AND_PHASE_SHIFTING = 5
-    CHESS_BOARD = 6
+    BLACK = 1
+    BINARY = 2
+    STRIPE = 3
+    GRAY_CODE = 4
+    PHASE_SHIFTING = 5
+    GRAY_CODE_AND_PHASE_SHIFTING = 6
+    CHESS_BOARD = 7
 
     WHITE_PATTERN = "White"
+    BLACK_PATTERN = "Black"
     IMAGE_PATTERN = "Img"
     INV_PATTERN = "ImgInv"
     TRANS_PATTERN = "ImgTrans"
@@ -26,6 +28,8 @@ class Patterns:
     def genetare(self, patternCode, pSize, chessboardSize=(0,0)):
         if patternCode == self.WHITE:
             return self.white(pSize)
+        elif patternCode == self.BLACK:
+            return self.black(pSize)
         elif patternCode == self.BINARY:
             return self.binary(pSize)
         elif patternCode == self.STRIPE:
@@ -35,8 +39,10 @@ class Patterns:
         elif patternCode == self.PHASE_SHIFTING:
             return self.phaseShifting(pSize)
         elif patternCode == self.GRAY_CODE_AND_PHASE_SHIFTING:
-            patterns = self.gray(pSize)
-            patterns[self.PHASE_PATTERN] = self.phaseShifting(pSize)[self.PHASE_PATTERN]
+            patterns = self.white(pSize)
+            patterns.update(self.black(pSize))
+            patterns.update(self.gray(pSize))
+            patterns.update(self.phaseShifting(pSize))
             return patterns
         elif patternCode == self.CHESS_BOARD:
             return self.chessboard(pSize,chessboardSize)
@@ -47,6 +53,14 @@ class Patterns:
         Единичен шаблон бял - за пълно осветяване на сцената
     """
     def white(self, pSize):
+        width, height = pSize
+        imgMatr = 255*np.zeros((1,height, width), np.uint8)
+        return {self.WHITE_PATTERN:imgMatr}
+
+    """
+        Единичен шаблон черен
+    """
+    def black(self, pSize):
         width, height = pSize
         imgMatr = 255*np.ones((1,height, width), np.uint8)
         return {self.WHITE_PATTERN:imgMatr}
@@ -69,14 +83,17 @@ class Patterns:
     """
     def gray(self, pSize):
         width, height = pSize
-        patternCnt = int(math.log2(width))+1
-        #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
-        #<<Горното2>>=(<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
-        #<<Горното2>>%2 - за четни двойки 0, иначе 1
-        imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        # patternCnt = int(math.log2(width))+1
+        # #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
+        # #<<Горното2>>=(<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
+        # #<<Горното2>>%2 - за четни двойки 0, иначе 1
+        # imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        # imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        # return self.multiply(imgMatr,imgMatrTrans,pSize)
 
-        return self.multiply(imgMatr,imgMatrTrans,pSize)
+        graycode = cv2.structured_light_GrayCodePattern.create(gc_width, gc_height)
+        patterns = graycode.generate()[1]
+        return patternss
 
     """
         Stripe шаблон
