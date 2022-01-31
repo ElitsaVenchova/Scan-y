@@ -2,17 +2,27 @@
 Structure light 3D scanner
 
 @TODO:
-    * Калибриране на проектор - да се прожектира шахматна дъска, която е принтирана и залепена на гърба. Да се засмене с камерата и да се калибрира проектора от нея.
-    * Ново сканиране на обекта
-        * Да се направи ОБРАТНО изкривяване на шаблона така, че като се прожектира, той да е правилен
-        * Да се заснемат отново изображенията
+    * Да се направи subparsers за Калибриране камера, Калибриране проектор и Сканиране и да се попълват args само за тях
+        * Пример: https://github.com/kamino410/phase-shifting
+    * Нова логика за scan:
+        * Шаблони:
+            * Gray code да се направи чрез cv2.structured_light_GrayCodePattern.create(gc_width, gc_height)
+            * Phase phift се запазва
+            * Добавяне на бял и черен шаблон
+        * Декодиране:
+            * (~)С graycode.getProjPixel(gc_imgs, x, y) да се вземе връзката между шаблона и заснетото изображение
+            * (#)С позната формула за argtan да се загърне фазата
+        * Резултат:
+            * (#) + (~)*2pi            
+    * Останали задачи
+        * Да се измисли как да използвам калибрирането.
+            * Формилата е (x,y)image = K(R*(x,y)real + T), K-матрица на калибриране, R-матрица на ротация, T-транслиращ вектор.
+            * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
+            * Workflow - Генерират се шаблоните->Undistortion с OpenCV на шаблоните->Прожектират се->Заснемат се изображенията->Undistortion с OpenCV на изображенията->Резултатът се пуска за обработка
         * Да се направи сканирането!
             * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
             * са се прочете как се прави point cloud - .xyz(?)
             * да се прочете как от point cloud се прави point mesh - файловеи формати .ply, .stl, .obj
-    * Да се оправи RuntimeWarning: This channel is already in use, continuing anyway.  Use GPIO.setwarnings(False) to disable warnings.
-    * Да се оправи: libEGL warning: DRI2: failed to authenticate
-                    [01bf42e8] mmal_xsplitter vout display error: Failed to open Xsplitter:opengles2 module
     * Web app
 """
 import cv2 as cv
@@ -25,7 +35,7 @@ def main(args):
     pSize =(615,360) #размер на проектора
     chessboardSize = (8,6)
     chessBlockSize = 16 # mm
-    
+
 #     patterns = sl.Patterns() # шаблони
 #     patternsArr = patterns.genetare(6,pSize,chessboardSize) # шаблоните
 #     for key, pattr in patternsArr.items():
