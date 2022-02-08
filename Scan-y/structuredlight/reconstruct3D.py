@@ -1,7 +1,7 @@
-+import cv2 as cv
+import cv2 as cv
 import numpy as np
 from .patterns import Patterns
-import open3d as o3d
+#import open3d as o3d
 
 """
     Рекоструиране на обекта от изображения в Point clound и Mesh
@@ -15,11 +15,11 @@ class Reconstruct3D:
     BLACK_N_WHITE = 0
     COLOR = 1
 
-    self.FILE_NAME = 'pointCloud.ply'
+    FILE_NAME = 'pointCloud.ply'
 
-    def __init__(self,pSize):
+    def __init__(self,pSize, piCamera):
         self.piCamera = piCamera
-        self.calibrationResCam = self.cameraPi.readCalibrationResult(self.piCamera.CALIBRATION_DIR)
+        self.calibrationResCam = self.piCamera.readCalibrationResult(self.piCamera.CALIBRATION_DIR)
 
         self.pSize = pSize # Размер прожекцията
         self.cSize = self.calibrationResCam['shape'] # Размер камера
@@ -29,9 +29,9 @@ class Reconstruct3D:
         self.whiteImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 2), np.int16)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.perspectiveTransformMap = np.zeros((3,3), np.float32)
-        self.pointCloud = np.zeros(cSize, np.float32)
+        self.pointCloud = np.zeros(self.cSize, np.float32)
 
-    def reconstruct(self, dir, cameraPi):
+    def reconstruct(self, dir):
         self.whiteImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)
 
         self.mapGrayCode(dir)
@@ -41,12 +41,13 @@ class Reconstruct3D:
         self.getPointCloud()
         self.savePointCloud(dir)
 
-        pcd = o3d.io.read_point_cloud("../../test_data/fragment.pcd")
-        #http://www.open3d.org/docs/latest/tutorial/Advanced/surface_reconstruction.html
-            mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=9)
-            o3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)
-        Multi view matching - http://www.open3d.org/docs/release/tutorial/pipelines/multiway_registration.html
-        Color map optimisation - http://www.open3d.org/docs/release/tutorial/pipelines/color_map_optimization.html
+        #pcd = o3d.io.read_point_cloud(dir + '/'+self.FILE_NAME)
+        #print(pcd)
+#         #http://www.open3d.org/docs/latest/tutorial/Advanced/surface_reconstruction.html
+#             mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=9)
+#             o3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)
+#         Multi view matching - http://www.open3d.org/docs/release/tutorial/pipelines/multiway_registration.html
+#         Color map optimisation - http://www.open3d.org/docs/release/tutorial/pipelines/color_map_optimization.html
 
     def mapGrayCode(self, dir):
         white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)

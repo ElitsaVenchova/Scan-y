@@ -17,7 +17,7 @@ Structure light 3D scanner
 """
 import cv2 as cv
 import numpy as np
-# import structuredlight as sl
+import structuredlight as sl
 import math
 import argparse
 
@@ -55,8 +55,8 @@ if __name__=="__main__":
     #scan
     parser_scan = subparsers.add_parser(
         'scan', help='Scan object')
-    parser_scan.add_argument('pattern', type=int, nargs='?',default = 4, help='Pattern for scanning.'
-                                '0-WHITE, 1-BLACK, 2-GRAY_CODE, 3-PHASE_SHIFTING, 4(default)-GRAY_CODE_AND_PHASE_SHIFTING, 5-BINARY, 6-STRIPE,')
+    parser_scan.add_argument('pattern', type=int, nargs='?',default = 2, help='Pattern for scanning.'
+                                '0-WHITE, 1-BLACK, 2(default)-GRAY_CODE, 3-PHASE_SHIFTING, 4-GRAY_CODE_AND_PHASE_SHIFTING, 5-BINARY, 6-STRIPE,')
     parser_scan.set_defaults(func=scan)
 
     #Camera calibration

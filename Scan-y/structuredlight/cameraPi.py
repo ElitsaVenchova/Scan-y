@@ -163,7 +163,7 @@ class CameraPi:
         fs = cv.FileStorage("./"+ calibrationDir + self.CALIBRATION_FILE, cv.FILE_STORAGE_READ)
         # Параметри на камерата
         calibrationRes = {
-            "shape" : fs.getNode('shape').mat(),
+            "shape" : fs.getNode('shape').mat().astype(int).flatten(),
             "matrix" : fs.getNode('matrix').mat(),
             "distortion" : fs.getNode('distortion').mat(),
             "error" : fs.getNode('error')

@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import cv2 as cv
 
 """
     Генериране на шаблони за сканиране
@@ -17,7 +18,7 @@ class Patterns:
 
     WHITE_PATTERN = "White"
     BLACK_PATTERN = "Black"
-    GRAY_CODE = "Gray"
+    GRAY_CODE_PATTERN = "Gray"
     PHASE_PATTERN = "Phase"
     IMAGE_PATTERN = "Img"
     INV_PATTERN = "Inv"
@@ -32,7 +33,10 @@ class Patterns:
         elif patternCode == self.BLACK:
             return self.black(pSize)
         elif patternCode == self.GRAY_CODE:
-            return self.gray(pSize)
+            patterns = self.white(pSize)
+            patterns.update(self.black(pSize))
+            patterns.update(self.gray(pSize))
+            return patterns
         elif patternCode == self.PHASE_SHIFTING:
             return self.phaseShifting(pSize)
         elif patternCode == self.GRAY_CODE_AND_PHASE_SHIFTING:
@@ -81,7 +85,7 @@ class Patterns:
         graycode = cv.structured_light_GrayCodePattern.create(width,height)
         imgMatr = graycode.generate()[1]
 
-        return {self.GRAY_CODE:imgMatr}
+        return {self.GRAY_CODE_PATTERN:imgMatr}
 
     """
         Отместване на фазата
