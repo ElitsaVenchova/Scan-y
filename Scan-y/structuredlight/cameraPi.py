@@ -53,7 +53,7 @@ class CameraPi:
         # Масиви за съхранение точките на обекта и точките в избражението
         objpoints = [] # 3d point in real world space
         imgpoints = [] # 2d points in image plane.
-        
+
         matched_pattern_cnt = 0 #брой намерени шаблони. Трябва да са поне 12, за да е коректно калибрирането.
 
         # взима имената на изображениета *.jpg от директорията сортирани по естествен начин
@@ -88,7 +88,7 @@ class CameraPi:
             # изходен вектор на ротиране(r_vecs),изходен вектор на транслиране(t_vecs)
             ret, matrix, distortion, r_vecs, t_vecs = cv.calibrateCamera(
                 objpoints, imgpoints, gray.shape[::-1], None, None)
-            
+
             # Изчисляване на грешката
             mean_error = 0
             for i in range(len(objpoints)):
@@ -110,8 +110,8 @@ class CameraPi:
 
             # Прочитане на резултата от калибрирането
             calibrationRes = self.readCalibrationResult(calibrationDir)
-            img = self.undistortImage(img, calibrationDir, calibrationRes)
-            
+            img = self.undistortImage(img, calibrationRes, calibrationDir)
+
         else:
             raise ValueError('Not enough matched patterns({0})!'.format(matched_pattern_cnt))
 
@@ -124,7 +124,7 @@ class CameraPi:
         return cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
 
     # Калибриране на изображението
-    def undistortImage(self, img, calibrationDir, calibrationRes):
+    def undistortImage(self, img, calibrationRes, calibrationDir=None):
         h,w = img.shape[:2] # размерите на изображението
         newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(calibrationRes["matrix"],
                                                             calibrationRes["distortion"],
@@ -135,8 +135,9 @@ class CameraPi:
         # Изрязване на изображението
         x,y,w,h = roi
         dst = dst[y:y+h, x:x+w]
-        cv.imwrite("./"+ calibrationDir + self.CALIBRATION_RES_IMAGE, dst)
-        print("Done!")
+        if calibrationDir != None:
+            cv.imwrite("./"+ calibrationDir + self.CALIBRATION_RES_IMAGE, dst)
+            print("Done!")
         return dst
 
     """

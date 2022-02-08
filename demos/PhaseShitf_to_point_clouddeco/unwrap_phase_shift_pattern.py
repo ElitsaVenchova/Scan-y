@@ -34,9 +34,9 @@ class PhaseShiftDecode:
       self.phaseWrap()
       self.phaseUnwrap()
       self.calcDepth()
-      # self.writeCsv('pointCloud.csv')
-      self.plot()
-      # self.write_pointcloud("res.ply")
+      self.writeCsv('pointCloud.csv')
+      # self.plot()
+      self.write_pointcloud("res.ply")
 
     def loadImages(self):
         self.phase1Image = cv.imread('./img/phase1.jpg')
@@ -118,7 +118,7 @@ class PhaseShiftDecode:
             self.toProcess.append((x, y))
 
     def calcDepth(self):
-        zscale = 10 # 130
+        zscale = 130
         zskew = 24
         for y in range(0, self.inputHeight):
           planephase = 0.5 - (y - (self.inputHeight / 2)) / zskew
@@ -166,8 +166,8 @@ class PhaseShiftDecode:
             # Write 3D points to .ply file
             for y in range(0, self.inputHeight):
               for x in range(0, self.inputWidth):
-                  if (not self.mask[y][x]):
-                      fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.pointCloud[y][x],
+                  if (not self.mask[y][x] and self.pointCloud[y][x]<500 and self.pointCloud[y][x]>-500):#
+                      fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.pointCloud[y][x]/(2/np.pi),
                                 self.colors[y][x][0],self.colors[y][x][1],self.colors[y][x][2]))
 
     def plot(self):

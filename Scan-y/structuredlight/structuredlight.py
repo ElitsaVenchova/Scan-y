@@ -9,7 +9,7 @@ from .turntable import Turntable
 from .projector import Projector
 
 """
-    Освен клас съдржащ всички методи за калибриране, сканиране и обработване на данните
+    Освен клас съдържащ всички методи за калибриране, сканиране и обработване на данните
 """
 class StructuredLight:
 
@@ -24,20 +24,25 @@ class StructuredLight:
         self.piCamera = CameraPi() # камера
         self.patterns = Patterns() # шаблони
         self.projector = Projector() # проектор
+        self.reconstruct3D = Reconstruct3D(pSize) # реконструиране на обекта
 
     # Сканиране на 360*.
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
     def scan(self, patternCode):
         # шаблоните
         patternImgs = self.patterns.genetare(patternCode,self.pSize) # шаблоните
+        # Матрицата за калибриране на проектора
+        calibrationRes = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)
 
         self.projector.start()
         # интериране позициите на масата за завъртане на 360*
         for i in range(0, self.turntable.SPR, self.STEP_SIZE):
             for pattType, patt in patternImgs.items():
-                self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i)
+                self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i, calibrationRes)
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
+
+        self.reconstruct3D.reconstruct(self.SCAN_DIR, self.cameraPi)
 
     # Калибриране на камерата.
     # type: A-автоматичен,M-ръчен
@@ -87,9 +92,11 @@ class StructuredLight:
         self.projector.stop()
         self.piCamera.calibrate(self.projector.CALIBRATION_DIR,chessboardSize, 1) #Не може да се определи големината на шахматния квадрат
 
-    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo):
+    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo, calibrationRes=None):
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
         for i,img in enumerate(patternImgs):
+            if calibrationRes != None:
+                img = self.cameraPi.undistortImage(img,calibrationRes)
             # cv.imshow('image',img)
             self.projector.playImage(img)
             self.piCamera.takePhoto(dir,'{0}{1}{2}'.format(stepNo,patternName,i))
