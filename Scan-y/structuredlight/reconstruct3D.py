@@ -1,7 +1,11 @@
 import cv2 as cv
 import numpy as np
 from .patterns import Patterns
-#import open3d as o3d
+from natsort import natsorted
+import glob
+
+from matplotlib import pyplot as plt
+# import open3d as o3d
 
 """
     Рекоструиране на обекта от изображения в Point clound и Mesh
@@ -9,8 +13,8 @@ from .patterns import Patterns
 class Reconstruct3D:
 
     FILTER = 1# Размер на филтъта. 1-3x3 прозорец
-    BLACKTHR = 20#праг на черното
-    WHITETHR = 4#праг на бялото
+    BLACK_THRESHOLD = 20#праг на черното
+    WHITE_THRESHOLD = 4#праг на бялото
 
     BLACK_N_WHITE = 0
     COLOR = 1
@@ -24,7 +28,7 @@ class Reconstruct3D:
         self.pSize = pSize # Размер прожекцията
         self.cSize = self.calibrationResCam['shape'] # Размер камера
 
-        self.mask = np.zeros(self.cSize, np.bool_)# маска кои пиксели стават за обработване.След инициализацията има стойност False
+        self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
         self.whiteImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 2), np.int16)#връзката на координатите на пикселите на снимката и шаблона GrayCode
@@ -34,8 +38,12 @@ class Reconstruct3D:
     def reconstruct(self, dir):
         self.whiteImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)
 
+        # TODO: Да се направи ръчно мапиране, защото това не работи много добре.
+        # Идеята е да се взима средно аритметично на пиксела между white и black, което да е граница.
+        # След това стойностите ще се определят с мнозинство между Img, ImgInv, ImgTrans и ImgTransInv
         self.mapGrayCode(dir)
         self.filterGrayCode()
+        # @TODO: Тук има неуспешни опити да се направи реконструкция.
         self.prespectiveTransform()
 
         self.getPointCloud()
@@ -49,34 +57,66 @@ class Reconstruct3D:
 #         Multi view matching - http://www.open3d.org/docs/release/tutorial/pipelines/multiway_registration.html
 #         Color map optimisation - http://www.open3d.org/docs/release/tutorial/pipelines/color_map_optimization.html
 
-    def mapGrayCode(self, dir):
-        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)
-        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)
-        grayCodeImgs = self.readImages(dir, Patterns.GRAY_CODE, self.BLACK_N_WHITE)
+    #Прочита изображенията за определен шаблон
+    def readImages(self, dir, patternCode, readType):
+        imgsNames = natsorted(glob.glob('./{0}/image0{1}*.jpg'.format(dir,patternCode)))
+        imgs = []
+        for fname in imgsNames:
+            img = None
+            if readType == 0:#От цветно изображението се прехвърля в черно бяло
+                img = cv.imread(fname, cv.IMREAD_GRAYSCALE)
+            else:# иначе цветно
+                img = cv.imread(fname)
+            img = self.piCamera.undistortImage(img, self.calibrationResCam)#прилагане на калибрирането на камерата
+            imgs.append(img)
+        return imgs
 
-        graycode = cv2.structured_light_GrayCodePattern.create(gc_width, gc_height)
-        graycode.setBlackThreshold(BLACKTHR)
-        graycode.setWhiteThreshold(WHITETHR)
-        for y in range(self.pSize[0]):
-            for x in range(self.pSize[1]):
-                if int(white[y, x]) - int(black[y, x]) <= BLACKTHR: #т.е. пиксела е черен и не може да се обработи(255-0 трябва да дава бяло, а не черно)
+    def mapGrayCode(self, dir):
+        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0]
+        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0]
+        grayCodeImgs = self.readImages(dir, Patterns.GRAY_CODE_PATTERN, self.BLACK_N_WHITE)
+
+        graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1])
+        graycode.setBlackThreshold(self.BLACK_THRESHOLD)
+        graycode.setWhiteThreshold(self.WHITE_THRESHOLD)
+        print(type(graycode.decode))
+        # ret, disp_l = graycode.decode(pattern_list, np.zeros_like(pattern_list[0]), black_list, white_list)
+        # plt.imshow(disp_l)
+        # plt.title('left disparity map')
+        # plt.show()
+        yerr, nerr = 0,0
+        for y in range(self.cSize[0]):
+            for x in range(self.cSize[1]):
+                if (y>=white.shape[0] or x>=white.shape[1] or
+                    y>=black.shape[0] or x>=black.shape[1] or
+                    int(white[y, x]) - int(black[y, x]) <= self.BLACK_THRESHOLD): #т.е. пиксела е черен и не може да се обработи(255-0 трябва да дава бяло, а не черно)
                     continue
                 err, proj_pix = graycode.getProjPixel(grayCodeImgs, x, y)#за (x,y) от снимките, връща (x,y) от шаблоните
+                if err:
+                    yerr+=1
                 if not err:
+                    nerr+=1
                     self.grayCodeMap[y, x, :] = np.array(proj_pix)#записва съответствята на координатите между снимките и шаблоните
                     #мареика се като бяло, т.е. има съвпадение
-                    self.mask[y, x] = True
+                    self.mask[y, x] = 255
+        print(yerr,nerr)#1 256 929-63 764
+
+    def decode(self,graycode):
+        patternsMaping = np.zeros((self.cSize[0],self.cSize[1], 2), np.int16)
+        imgMatr = graycode.generate()[1]
+        # for i
+
+        pass
 
     # smoothing filter
     def filterGrayCode(self):
         #Трансгормация Dilation(създава плавна граница на обекта) последвана от Erosion(изчиства страничния бял шум от задния план).
         #Използва се за премахване на малки черни дупки в предния план.
-        #   255*self.mask - от Bool масив прави масив от 0 или 255
-        ext_mask = cv.morphologyEx(255*self.mask, cv.MORPH_CLOSE,
+        ext_mask = cv.morphologyEx(self.mask, cv.MORPH_CLOSE,
                                     np.ones((self.FILTER*2+1, self.FILTER*2+1)))#Прилага се филтър 3x3
         for y in range(self.pSize[0]):
             for x in range(self.pSize[1]):
-                if self.mask[y, x] == False and ext_mask[y, x] != 0:
+                if self.mask[y, x] == 0 and ext_mask[y, x] != 0:
                     sum_x = 0
                     sum_y = 0
                     cnt = 0
@@ -97,20 +137,35 @@ class Reconstruct3D:
                         self.grayCodeMap[y, x, 0] = np.round(sum_x/cnt)# x е средно аритметично на x от съседните пиксели
                         self.grayCodeMap[y, x, 1] = np.round(sum_y/cnt)# y е средно аритметично на x от съседните пиксели
 
-            self.mask = ext_mask==255#ext_mask е масив от 0 или 255. Целият израз връща True за стойностите 255 и False за останалите
+            self.mask = ext_mask
 
     def prespectiveTransform(self):
-        h = np.arange(self.cSize[0])
-        w = np.arange(self.cSize[1])
-        imgMap = np.transpose([np.repeat(w, len(h)),np.tile(h, len(w))])
-        imgMap = imgMap.reshape(w,h,2)
-        self.perspectiveTransformMap = cv.getPerspectiveTransform(imgMap, self.grayCodeMap)
+        # взимат се 4 индека - по един в двата края и два около средата
+        points = self.getFourMeaningPoints()
+        src = np.array(points).T.tolist()
+
+        print(self.grayCodeMap[tuple(src)].astype(np.float32))
+        self.perspectiveTransformMap = cv.getPerspectiveTransform(points.astype(np.float32), self.grayCodeMap[tuple(src)].astype(np.float32))
+
+    # връща 4 значещи точки за намиране на трансформиращата матрица
+    # целта е да се центрове на разделеното изображение на 4 равни части, т.е. [1/4,1/4],[1/4,3/4],[3/4,1/4],[3/4,3/4] от цялата дължина и ширана на изображението
+    # търси се най-близката до тези центрове точка, която не е [0,0]
+    def getFourMeaningPoints(self):
+        h_quarter = self.cSize[0]/4
+        w_quarter = self.cSize[1]/4
+        points = np.array([[h_quarter,w_quarter],[h_quarter,3*w_quarter],[h_quarter*3,w_quarter],[h_quarter*3,w_quarter*3]],np.int16)
+        return points
 
     def getPointCloud(self):
         disparityMap = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
         for y in range(self.cSize[0]):
             for x in range(self.cSize[1]):
-                disparityMap[y,x] = np.sqrt(np.power((y-grayCodeMap[y,x,1]),2) + np.power((z-grayCodeMap[y,x,1]),2))
+                disparityMap[y,x] = np.sqrt(np.power((y-self.grayCodeMap[y,x,0]),2) + np.power((x-self.grayCodeMap[y,x,1]),2))
+
+        print(disparityMap.astype(np.int))
+        cv.imshow('key',disparityMap.astype(np.int))
+        cv.waitKey(0)
+        cv.destroyAllWindows()
 
         self.pointCloud = cv.reprojectImageTo3D(
                          disparityMap,
@@ -120,7 +175,7 @@ class Reconstruct3D:
         with open(dir + '/'+self.FILE_NAME,'w') as fid:
             fid.write('ply\n')
             fid.write('format ascii 1.0\n')
-            fid.write('element vertex %d\n'%self.mask.sum())
+            fid.write('element vertex %d\n'%np.count_nonzero(self.mask))
             fid.write('property float x\n')
             fid.write('property float y\n')
             fid.write('property float z\n')
@@ -132,20 +187,6 @@ class Reconstruct3D:
             # Write 3D points to .ply file
             for y in range(0, self.cSize[0]):
               for x in range(0, self.cSize[1]):
-                  if (not self.mask[y][x]):#
+                  if self.mask[y][x] != 0:#
                       fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.pointCloud[y][x],
                                 self.whiteImg[y][x][2],self.whiteImg[y][x][1],self.whiteImg[y][x][0]))
-
-    #Прочита изображенията за определен шаблон
-    def readGrayCodeImgs(self, dir, patternCode, readType):
-        imgsNames = natsorted(glob.glob('./{0}/image0{1}*.jpg'.format(dir,patternCode)))
-        imgs = []
-        for fname in imgsNames:
-            img = None
-            if readType == 0:#От цветно изображението се прехвърля в черно бяло
-                img = cv.imread(fname, cv.IMREAD_GRAYSCALE)
-            else:# иначе цветно
-                img = cv.imread(fname)
-            img = self.piCamera.undistortImage(img, self.calibrationResCam)#прилагане на калибрирането на камерата
-            imgs.append(img)
-        return imgs

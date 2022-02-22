@@ -2,18 +2,15 @@
 Structure light 3D scanner
 
 @TODO:
-    * Нова логика за scan - Резултат:
-        * (#) + (~)*2pi, където (#)phase shift и (~)gray code map
-    * Останали задачи
-        * Да се измисли как да използвам калибрирането.
-            * Формилата е (x,y)image = K(R*(x,y)real + T), K-матрица на калибриране, R-матрица на ротация, T-транслиращ вектор.
-            * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
-        * Да се направи сканирането!
-            * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
-            * са се прочете как се прави point cloud - .xyz(?)
-            * да се прочете как от point cloud се прави mesh - файловеи формати .ply, .stl, .obj
+    * Да се записва в резултата от калибрирането newCameraMatrix, roi = cv.getOptimalNewCameraMatrix. Сега се смята за всяко изображение
+    * При калибриране на проектора да се добави първо undistortImage с параметрите на камерата.
+    * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
+    * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
     * Web app
+        * да се направят фукции връщане point cloud, mesh - файловеи формати .ply, .stl, .obj. Кухи, ако не се направи имплементация
+        * връща изображенията в архив и после погат да се пуснат в MeshLap.
     * Коментиране на кода
+    * Тестът за точност може да бъде между резултата в MeshLap и сканиране на ДиТра
 """
 import cv2 as cv
 import numpy as np
@@ -32,7 +29,7 @@ def pCalib(args):
 
 def main():
     print("main")
-    
+
     # patterns = sl.Patterns() # шаблони
     # patternsArr = patterns.genetare(6,pSize,chessboardSize) # шаблоните
     # for key, pattr in patternsArr.items():
