@@ -3,6 +3,7 @@ import numpy as np
 from .patterns import Patterns
 from natsort import natsorted
 import glob
+import math
 
 from matplotlib import pyplot as plt
 # import open3d as o3d
@@ -31,8 +32,7 @@ class Reconstruct3D:
         self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
         self.whiteImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
-        self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 2), np.int16)#връзката на координатите на пикселите на снимката и шаблона GrayCode
-        self.perspectiveTransformMap = np.zeros((3,3), np.float32)
+        self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.int16)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.pointCloud = np.zeros(self.cSize, np.float32)
 
     def reconstruct(self, dir):
@@ -46,7 +46,6 @@ class Reconstruct3D:
         # @TODO: Тук има неуспешни опити да се направи реконструкция.
         self.prespectiveTransform()
 
-        self.getPointCloud()
         self.savePointCloud(dir)
 
         #pcd = o3d.io.read_point_cloud(dir + '/'+self.FILE_NAME)
@@ -79,11 +78,6 @@ class Reconstruct3D:
         graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1])
         graycode.setBlackThreshold(self.BLACK_THRESHOLD)
         graycode.setWhiteThreshold(self.WHITE_THRESHOLD)
-        print(type(graycode.decode))
-        # ret, disp_l = graycode.decode(pattern_list, np.zeros_like(pattern_list[0]), black_list, white_list)
-        # plt.imshow(disp_l)
-        # plt.title('left disparity map')
-        # plt.show()
         yerr, nerr = 0,0
         for y in range(self.cSize[0]):
             for x in range(self.cSize[1]):
@@ -96,17 +90,11 @@ class Reconstruct3D:
                     yerr+=1
                 if not err:
                     nerr+=1
-                    self.grayCodeMap[y, x, :] = np.array(proj_pix)#записва съответствята на координатите между снимките и шаблоните
+                    dist = math.sqrt(pow(y-proj_pix[0],2) + pow(x-proj_pix[1],2))#разстоянието между ъточките в едната и др. коорд.
+                    self.grayCodeMap[y, x, :] = np.array(proj_pix,dist)#записва съответствята на координатите между снимките и шаблоните
                     #мареика се като бяло, т.е. има съвпадение
                     self.mask[y, x] = 255
         print(yerr,nerr)#1 256 929-63 764
-
-    def decode(self,graycode):
-        patternsMaping = np.zeros((self.cSize[0],self.cSize[1], 2), np.int16)
-        imgMatr = graycode.generate()[1]
-        # for i
-
-        pass
 
     # smoothing filter
     def filterGrayCode(self):
@@ -140,36 +128,7 @@ class Reconstruct3D:
             self.mask = ext_mask
 
     def prespectiveTransform(self):
-        # взимат се 4 индека - по един в двата края и два около средата
-        points = self.getFourMeaningPoints()
-        src = np.array(points).T.tolist()
-
-        print(self.grayCodeMap[tuple(src)].astype(np.float32))
-        self.perspectiveTransformMap = cv.getPerspectiveTransform(points.astype(np.float32), self.grayCodeMap[tuple(src)].astype(np.float32))
-
-    # връща 4 значещи точки за намиране на трансформиращата матрица
-    # целта е да се центрове на разделеното изображение на 4 равни части, т.е. [1/4,1/4],[1/4,3/4],[3/4,1/4],[3/4,3/4] от цялата дължина и ширана на изображението
-    # търси се най-близката до тези центрове точка, която не е [0,0]
-    def getFourMeaningPoints(self):
-        h_quarter = self.cSize[0]/4
-        w_quarter = self.cSize[1]/4
-        points = np.array([[h_quarter,w_quarter],[h_quarter,3*w_quarter],[h_quarter*3,w_quarter],[h_quarter*3,w_quarter*3]],np.int16)
-        return points
-
-    def getPointCloud(self):
-        disparityMap = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
-        for y in range(self.cSize[0]):
-            for x in range(self.cSize[1]):
-                disparityMap[y,x] = np.sqrt(np.power((y-self.grayCodeMap[y,x,0]),2) + np.power((x-self.grayCodeMap[y,x,1]),2))
-
-        print(disparityMap.astype(np.int))
-        cv.imshow('key',disparityMap.astype(np.int))
-        cv.waitKey(0)
-        cv.destroyAllWindows()
-
-        self.pointCloud = cv.reprojectImageTo3D(
-                         disparityMap,
-                         self.perspectiveTransformMap)
+        self.pointCloud = cv2.perspectiveTransform(point_and_disparity, q_matrix)
 
     def savePointCloud(self,dir):
         with open(dir + '/'+self.FILE_NAME,'w') as fid:
