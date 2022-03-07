@@ -2,8 +2,7 @@
 Structure light 3D scanner
 
 @TODO:
-    * Да се записва в резултата от калибрирането newCameraMatrix, roi = cv.getOptimalNewCameraMatrix. Сега се смята за всяко изображение
-    * При калибриране на проектора да се добави първо undistortImage с параметрите на камерата.
+    * Собствена реалциация на gray code mapping.
     * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
     * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
     * Web app
@@ -20,6 +19,9 @@ import argparse
 
 def scan(args):
     scanY.scan(args.pattern)
+
+def stereoCalib(args):
+    scanY.stereoCalibrate(args.chessboardSize)
 
 def cCalib(args):
     scanY.cameraCalibrate(args.chessboardSize, args.chessboardSize, args.calib_type)
@@ -55,6 +57,12 @@ if __name__=="__main__":
     parser_scan.add_argument('pattern', type=int, nargs='?',default = 2, help='Pattern for scanning.'
                                 '0-WHITE, 1-BLACK, 2(default)-GRAY_CODE, 3-PHASE_SHIFTING, 4-GRAY_CODE_AND_PHASE_SHIFTING, 5-BINARY, 6-STRIPE,')
     parser_scan.set_defaults(func=scan)
+
+    #Stereo calibration
+    parser_stereoCalib = subparsers.add_parser(
+        'stereoCalib', help='Stereo calibration')
+    parser_stereoCalib.add_argument('chessboardSize', type=int, nargs='?',default = (6,8), help='Chessboard size. Default: (6,8)')
+    parser_stereoCalib.set_defaults(func=stereoCalib)
 
     #Camera calibration
     parser_cCalib = subparsers.add_parser(

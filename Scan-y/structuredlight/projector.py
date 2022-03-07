@@ -8,8 +8,8 @@ import cv2 as cv
 class Projector:
 
     media_player = None
-    TMP_PATTERN_FULL_PATH = "/tmp/tmpPattern.jpg"
-    CALIBRATION_DIR = "Projector_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
+    TMP_PATTERN_FILE_NAME = "/tmpPattern.jpg"
+    CALIBRATION_DIR = "./Projector_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
     CHESS_BOARD_PATTERN = "/chessboard.jpg" # Файл с резултата от калибрирането
 
     # Стартира HDMI порта, ако не е
@@ -25,8 +25,8 @@ class Projector:
 
     # Задава изображение за показване на проектора
     def playImage(self, image):
-        cv.imwrite(self.TMP_PATTERN_FULL_PATH, image)
-        self.playImageByPath(self.TMP_PATTERN_FULL_PATH)
+        cv.imwrite(self.CALIBRATION_DIR + self.TMP_PATTERN_FILE_NAME, image)
+        self.playImageByPath(self.CALIBRATION_DIR + self.TMP_PATTERN_FILE_NAME)
 
     # Задава изображение по определ PATH за показване на проектора
     def playImageByPath(self, path):

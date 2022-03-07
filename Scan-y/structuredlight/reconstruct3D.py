@@ -24,18 +24,18 @@ class Reconstruct3D:
 
     def __init__(self,pSize, piCamera):
         self.piCamera = piCamera
-        self.calibrationResCam = self.piCamera.readCalibrationResult(self.piCamera.CALIBRATION_DIR)
+        self.stereoCalibrationRes = self.piCamera.readStereoCalibrationResult(self.piCamera.STEREO_CALIBRATION_DIR)
 
         self.pSize = pSize # Размер прожекцията
-        self.cSize = self.calibrationResCam['shape'] # Размер камера
+        self.cSize = self.stereoCalibrationRes['shape'] # Размер камера
 
         self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
         self.whiteImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
-        self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.int16)#връзката на координатите на пикселите на снимката и шаблона GrayCode
+        self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.float32)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.pointCloud = np.zeros(self.cSize, np.float32)
 
-    def reconstruct(self, dir):
+    def reconstruct(self, dir, stereoCalibrationRes):
         self.whiteImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)
 
         # TODO: Да се направи ръчно мапиране, защото това не работи много добре.
@@ -44,7 +44,7 @@ class Reconstruct3D:
         self.mapGrayCode(dir)
         self.filterGrayCode()
         # @TODO: Тук има неуспешни опити да се направи реконструкция.
-        self.prespectiveTransform()
+        self.prespectiveTransform(stereoCalibrationRes["disparityToDepthMatrix"])
 
         self.savePointCloud(dir)
 
@@ -58,15 +58,14 @@ class Reconstruct3D:
 
     #Прочита изображенията за определен шаблон
     def readImages(self, dir, patternCode, readType):
-        imgsNames = natsorted(glob.glob('./{0}/image0{1}*.jpg'.format(dir,patternCode)))
+        imgsNames = natsorted(glob.glob('./{0}/image70{1}*.jpg'.format(dir,patternCode)))
         imgs = []
         for fname in imgsNames:
             img = None
             if readType == 0:#От цветно изображението се прехвърля в черно бяло
-                img = cv.imread(fname, cv.IMREAD_GRAYSCALE)
+                img = self.piCamera.loadImage(fname,cv.IMREAD_GRAYSCALE)
             else:# иначе цветно
                 img = cv.imread(fname)
-            img = self.piCamera.undistortImage(img, self.calibrationResCam)#прилагане на калибрирането на камерата
             imgs.append(img)
         return imgs
 
@@ -91,7 +90,7 @@ class Reconstruct3D:
                 if not err:
                     nerr+=1
                     dist = math.sqrt(pow(y-proj_pix[0],2) + pow(x-proj_pix[1],2))#разстоянието между ъточките в едната и др. коорд.
-                    self.grayCodeMap[y, x, :] = np.array(proj_pix,dist)#записва съответствята на координатите между снимките и шаблоните
+                    self.grayCodeMap[y, x, :] = np.array([proj_pix[0],proj_pix[1],dist])#записва съответствята на координатите между снимките и шаблоните
                     #мареика се като бяло, т.е. има съвпадение
                     self.mask[y, x] = 255
         print(yerr,nerr)#1 256 929-63 764
@@ -117,18 +116,19 @@ class Reconstruct3D:
                                     and ty >= 0 and ty < self.pSize[0] #ty не е извън координатите на камерата
                                     and tx >= 0 and tx < self.pSize[1] #tx не е извън координатите на камерата
                                     and self.mask[ty, tx] != 0):#mask[ty, tx] не е черен пиксел, т.е. обработваме го
-                                sum_x += self.grayCodeMap[ty, tx, 0]#Сумират се координатите на съседните изображения
-                                sum_y += self.grayCodeMap[ty, tx, 1]#Сумират се координатите на съседните изображения
+                                sum_y += self.grayCodeMap[ty, tx, 0]#Сумират се координатите на съседните изображения
+                                sum_x += self.grayCodeMap[ty, tx, 1]#Сумират се координатите на съседните изображения
                                 cnt += 1
                     if cnt != 0:
                         #така новата GC карта орговяря на инфомрацията в новата маска ext_mask
-                        self.grayCodeMap[y, x, 0] = np.round(sum_x/cnt)# x е средно аритметично на x от съседните пиксели
-                        self.grayCodeMap[y, x, 1] = np.round(sum_y/cnt)# y е средно аритметично на x от съседните пиксели
+                        self.grayCodeMap[y, x, 0] = np.round(sum_y/cnt)# x е средно аритметично на x от съседните пиксели
+                        self.grayCodeMap[y, x, 1] = np.round(sum_x/cnt)# y е средно аритметично на x от съседните пиксели
+                        self.grayCodeMap[y, x, 2] = math.sqrt(pow(y-self.grayCodeMap[y, x, 0],2) + pow(x-self.grayCodeMap[y, x, 1],2))
 
             self.mask = ext_mask
 
-    def prespectiveTransform(self):
-        self.pointCloud = cv2.perspectiveTransform(point_and_disparity, q_matrix)
+    def prespectiveTransform(self,q_matrix):
+        self.pointCloud = cv.perspectiveTransform(self.grayCodeMap, q_matrix)
 
     def savePointCloud(self,dir):
         with open(dir + '/'+self.FILE_NAME,'w') as fid:
@@ -146,6 +146,9 @@ class Reconstruct3D:
             # Write 3D points to .ply file
             for y in range(0, self.cSize[0]):
               for x in range(0, self.cSize[1]):
-                  if self.mask[y][x] != 0:#
-                      fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.pointCloud[y][x],
-                                self.whiteImg[y][x][2],self.whiteImg[y][x][1],self.whiteImg[y][x][0]))
+                  # @TODO: Има разминаване между броя на редовете в маската и тези от лога.
+                  # Ако долу филтрирам допълнително pointCloud!=[0,0,0] се получава бройката от лога. Горе трябва да се разследва!
+                  if self.mask[y][x] != 0 and not np.array_equal(self.pointCloud[y][x],[0,0,0]):#
+                      fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.pointCloud[y][x][2],
+                                self.whiteImg[0][y][x][2],self.whiteImg[0][y][x][1],self.whiteImg[0][y][x][0]))#150,0,0))#
+        print(self.FILE_NAME)

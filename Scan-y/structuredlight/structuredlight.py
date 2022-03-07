@@ -14,7 +14,7 @@ from .reconstruct3D import Reconstruct3D
 """
 class StructuredLight:
 
-    SCAN_DIR = "Scan" # Директория съдържаща снимките за сканирането
+    SCAN_DIR = "./Scan" # Директория съдържаща снимките за сканирането
     # Определя големината на една стъпка.
     STEP_SIZE = 10 # 200/1 - ще се сканира от 200 ъгъла; 200/10=20 - ще се сканира от 20 ъгъла
 
@@ -43,7 +43,20 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-        self.reconstruct3D.reconstruct(self.SCAN_DIR)
+        stereoCalibrationRes = self.cameraPi.readStereoCalibrationResult(self.cameraPi.STEREO_CALIBRATION_DIR)
+        self.reconstruct3D.reconstruct(self.SCAN_DIR,stereoCalibrationRes)
+
+    def stereoCalibrate(self, chessboardSize):
+        patternCode = Patterns.CHESS_BOARD
+        patternImgs = self.patterns.genetare(patternCode,self.pSize,chessboardSize) # генериране само на бял шаблон
+        pattType, patt = list(patternImgs.items())[0]
+
+        self.projector.start()
+        self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
+        self.projector.stop()
+        self.cameraPi.stereoCalibrate(self.cameraPi.STEREO_CALIBRATION_DIR, self.cameraPi.CALIBRATION_DIR,
+            self.projector.CALIBRATION_DIR, chessboardSize)
+
 
     # Калибриране на камерата.
     # type: A-автоматичен,M-ръчен
@@ -93,11 +106,13 @@ class StructuredLight:
         self.projector.stop()
         self.cameraPi.calibrate(self.projector.CALIBRATION_DIR,chessboardSize, 1) #Не може да се определи големината на шахматния квадрат
 
-    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo, calibrationRes=None):
+    def scanCurrentStep(self, patternImgs, dir, patternName, stepNo, pCalibrationRes=None):
         # итериране по шаблоните като enumerate добави пореден номер за улеснение
         for i,img in enumerate(patternImgs):
-            if calibrationRes != None:
-                img = self.cameraPi.undistortImage(img,calibrationRes)
+            # Ако има налична калибрация на проетора и извикването не за калибриране на проектора,
+            # то първо се "изправя изображението" преди да се прожектира
+            if pCalibrationRes != None and dir != self.projector.CALIBRATION_DIR:
+                img = self.cameraPi.undistortImage(img,pCalibrationRes)
             # cv.imshow('image',img)
             self.projector.playImage(img)
             self.cameraPi.takePhoto(dir,'{0}{1}{2}'.format(stepNo,patternName,i))
