@@ -8,3 +8,6 @@ Docs/Източници/~$mera calibration.docx
 Docs/Източници/~WRL1155.tmp
 *.pyc
 Docs/~WRL0003.tmp
+Scan-y/structuredlight/cameraPi.py
+Scan-y/structuredlight/projector.py
+Scan-y/structuredlight/turntable.py
