@@ -25,10 +25,10 @@ def stereoCalib(args):
     scanY.stereoCalibrate(args.chessboardSize)
 
 def cCalib(args):
-    scanY.cameraCalibrate(args.chessboardSize, args.chessboardSize, args.calib_type)
+    scanY.cameraCalibrate((args.pHeight,args.pWidth),args.chessboardSize, args.chessboardSize, args.calib_type)
 
 def pCalib(args):
-    scanY.projectorCalibrate(args.chessboardSize)
+    scanY.projectorCalibrate((args.pHeight,args.pWidth),args.chessboardSize)
 
 def main():
     print("main")
@@ -48,15 +48,13 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(
         description='Scan-y 3D structured light scanner\n',
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('pHeight', type=int, nargs='?',default = 360, help='Projector height. Default: 360')
-    parser.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
     subparsers = parser.add_subparsers()
 
     #scan
     parser_scan = subparsers.add_parser(
         'scan', help='Scan object')
-    parser_scan.add_argument('pattern', type=int, nargs='?',default = 2, help='Pattern for scanning.'
-                                '0-WHITE, 1-BLACK, 2(default)-GRAY_CODE, 3-PHASE_SHIFTING, 4-GRAY_CODE_AND_PHASE_SHIFTING, 5-BINARY, 6-STRIPE,')
+    parser_scan.add_argument('pattern', type=int, nargs='?',default = 3, help='Pattern for scanning.'
+                                '0-WHITE, 1-BLACK, 2-OPENCV_GRAY_CODE, 3(default)-MANUAL_GRAY_CODE, 4-PHASE_SHIFTING, 5-GRAY_CODE_AND_PHASE_SHIFTING, 6-BINARY, 7-STRIPE,')
     parser_scan.set_defaults(func=scan)
 
     #Stereo calibration
@@ -69,6 +67,8 @@ if __name__=="__main__":
     parser_cCalib = subparsers.add_parser(
         'cCalib', help='Camera calibration')
     parser_cCalib.add_argument('calib_type', type=str, nargs='?',default = 'A',help='Calibration type of camera: A(default)-automatic, M-manual')
+    parser_cCalib.add_argument('pHeight', type=int, nargs='?',default = 360, help='Projector height. Default: 360')
+    parser_cCalib.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
     parser_cCalib.add_argument('chessboardSize', type=int, nargs='?',default = (6,8), help='Chessboard size. Default: (6,8)')
     parser_cCalib.add_argument('chessBlockSize', type=int, nargs='?',default = 16, help='Chessboard block size. Default: 16mm')
     parser_cCalib.set_defaults(func=cCalib)
@@ -76,12 +76,14 @@ if __name__=="__main__":
     #Projector calibration
     parser_pCalib = subparsers.add_parser(
         'pCalib', help='Projector calibration')
+    parser_cCalib.add_argument('pHeight', type=int, nargs='?',default = 360, help='Projector height. Default: 360')
+    parser_cCalib.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
     parser_pCalib.add_argument('chessboardSize', type=int, nargs='?',default = (6,8), help='Chessboard size. Default: (6,8)')
     parser_pCalib.set_defaults(func=pCalib)
 
     args = parser.parse_args()
     if hasattr(args, 'func'):
-        scanY = sl.StructuredLight((args.pHeight,args.pWidth))
+        scanY = sl.StructuredLight()
         args.func(args)
     else:
         parser.print_help()

@@ -21,7 +21,10 @@ class CameraPi:
 
     # Инициализиране на необходимите параметри на камерата
     def __init__(self):
-        self.cCalibrationRes = self.readCalibrationResult(self.CALIBRATION_DIR) # зареждане на вътрешните параметри на камерата
+        # зареждане на вътрешните параметри на камерата
+        self.cCalibrationRes = self.readCalibrationResult(self.CALIBRATION_DIR)
+        # зареждане на вътрешните параметри от стерео калибрирането
+        self.stereoCalibrationRes = self.readStereoCalibrationResult(self.STEREO_CALIBRATION_DIR)
 
     """
         Прави снимка с камерата и връща името на jpg файла.
@@ -46,14 +49,13 @@ class CameraPi:
     """
         Стерео калибриране на камерата и проектора.
         stereoCalibrationDir - Директория съдържаща файловете за стерео калибриране и, в която ще бъде запазен резултата
-        camCalibrationDir, projCalibrationDir - директории, в които са съхранени резултатите от калибрирането съответно на камерата и проектора
         patt - шаблонът на шахматна дъска, който е бил прожектиран и заснет от камерата. Ще бъде представен
                "като това, което вижда проектора, ако беше камера".
+        projCalibResults - зарежда се в structuredlight, защото трябва да се вземе размера на проектора за генериране на шаблон
     """
-    def stereoCalibrate(self,stereoCalibrationDir, camCalibrationDir, projCalibrationDir, chessboardSize):
-        camCalibResults = self.readCalibrationResult(camCalibrationDir)
-        projCalibResults = self.readCalibrationResult(projCalibrationDir)
-        objpoints, camImgpoints, projImgpoints = self.stereoFindChessboardCorners(stereoCalibrationDir, chessboardSize)
+    def stereoCalibrate(self, chessboardSize, projCalibResults):
+        camCalibResults = self.readCalibrationResult(self.CALIBRATION_DIR)
+        objpoints, camImgpoints, projImgpoints = self.stereoFindChessboardCorners(self.STEREO_CALIBRATION_DIR, chessboardSize)
 
         # cv.CALIB_FIX_INTRINSIC - изчислява само r_matrix, t_vecs,  essentialMatrix, fundamentalMatrix
         ret, cameraMatrix, cameraDistortion, projectorMatrix, projectorDistortion, r_matrix, t_vecs,  essentialMatrix, fundamentalMatrix = \
@@ -65,7 +67,8 @@ class CameraPi:
 
         # запиване на резултата от калибрирането
         stereoCalibrationRes = {
-            "shape" : camCalibResults["shape"],
+            "cShape" : camCalibResults["shape"],
+            "pShape" : projCalibResults["shape"],
             "cameraMatrix": cameraMatrix,
             "cameraDistortion": cameraDistortion,
             "projectorMatrix": projectorMatrix,
@@ -201,7 +204,8 @@ class CameraPi:
         camImgpoints = imgpoints
 
         # Взимане на imgpoints за проектора. Тук шаблона се представя като това, което е заснето от камерата
-        img = cv.imread(Projector.CALIBRATION_DIR + Projector.TMP_PATTERN_FILE_NAME, cv.IMREAD_GRAYSCALE)# Тук не трябва да се прилага матрицата на камерата
+        # Тук не трябва да се прилага матрицата на камерата
+        img = cv.imread(Projector.CALIBRATION_DIR + Projector.TMP_PATTERN_FILE_NAME, cv.IMREAD_GRAYSCALE)
         img = ndimage.rotate(img, 90)
         ret, corners = cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
         if ret == True:

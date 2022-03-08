@@ -22,12 +22,11 @@ class Reconstruct3D:
 
     FILE_NAME = 'pointCloud.ply'
 
-    def __init__(self,pSize, piCamera):
+    def __init__(self,piCamera):
         self.piCamera = piCamera
-        self.stereoCalibrationRes = self.piCamera.readStereoCalibrationResult(self.piCamera.STEREO_CALIBRATION_DIR)
 
-        self.pSize = pSize # Размер прожекцията
-        self.cSize = self.stereoCalibrationRes['shape'] # Размер камера
+        self.pSize = self.piCamera.stereoCalibrationRes['pShape'] # Размер прожекцията
+        self.cSize = self.piCamera.stereoCalibrationRes['cShape'] # Размер камера
 
         self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
@@ -35,7 +34,7 @@ class Reconstruct3D:
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.float32)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.pointCloud = np.zeros(self.cSize, np.float32)
 
-    def reconstruct(self, dir, stereoCalibrationRes):
+    def reconstruct(self, dir):
         self.whiteImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)
 
         # TODO: Да се направи ръчно мапиране, защото това не работи много добре.
@@ -44,7 +43,7 @@ class Reconstruct3D:
         self.mapGrayCode(dir)
         self.filterGrayCode()
         # @TODO: Тук има неуспешни опити да се направи реконструкция.
-        self.prespectiveTransform(stereoCalibrationRes["disparityToDepthMatrix"])
+        self.prespectiveTransform(self.piCamera.stereoCalibrationRes["disparityToDepthMatrix"])
 
         self.savePointCloud(dir)
 
@@ -69,7 +68,7 @@ class Reconstruct3D:
             imgs.append(img)
         return imgs
 
-    def mapGrayCode(self, dir):
+    def autoMapGrayCode(self, dir):
         white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0]
         black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0]
         grayCodeImgs = self.readImages(dir, Patterns.GRAY_CODE_PATTERN, self.BLACK_N_WHITE)
@@ -94,6 +93,21 @@ class Reconstruct3D:
                     #мареика се като бяло, т.е. има съвпадение
                     self.mask[y, x] = 255
         print(yerr,nerr)#1 256 929-63 764
+
+    def manualMapGrayCode(self, dir):
+        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0]
+        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0]
+        # Съдържа измерените стойности за пикселите в 4-те различни варианта
+        tempGrayCodeMap = {
+            self.IMAGE_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32),
+            self.INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32),
+            self.TRANS_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32),
+            self.TRANS_INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32)}
+        patternImg = Patterns.genetare(Patterns.WHITE_PATTERN)
+
+        grayCodeImgs = self.readImages(dir, Patterns.GRAY_CODE_PATTERN, self.BLACK_N_WHITE)
+
+
 
     # smoothing filter
     def filterGrayCode(self):

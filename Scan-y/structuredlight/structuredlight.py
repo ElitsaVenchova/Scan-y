@@ -19,19 +19,18 @@ class StructuredLight:
     STEP_SIZE = 10 # 200/1 - ще се сканира от 200 ъгъла; 200/10=20 - ще се сканира от 20 ъгъла
 
     # Инициализиране на необходимите параметри за сканиране и калибриране
-    def __init__(self, pSize):
-        self.pSize = pSize # Размер прожекцията
+    def __init__(self):
         self.turntable = Turntable() # въртящата се маса
         self.cameraPi = CameraPi() # камера
         self.patterns = Patterns() # шаблони
         self.projector = Projector() # проектор
-        self.reconstruct3D = Reconstruct3D(pSize, self.cameraPi) # реконструиране на обекта
+        self.reconstruct3D = Reconstruct3D(self.cameraPi) # реконструиране на обекта
 
     # Сканиране на 360*.
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
     def scan(self, patternCode):
         # шаблоните
-        patternImgs = self.patterns.genetare(patternCode,self.pSize) # шаблоните
+        patternImgs = self.patterns.genetare(patternCode,self.piCamera.stereoCalibrationRes['pShape']) # шаблоните
         # Матрицата за калибриране на проектора
         calibrationRes = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)
 
@@ -43,27 +42,26 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-        stereoCalibrationRes = self.cameraPi.readStereoCalibrationResult(self.cameraPi.STEREO_CALIBRATION_DIR)
-        self.reconstruct3D.reconstruct(self.SCAN_DIR,stereoCalibrationRes)
+        self.reconstruct3D.reconstruct(self.SCAN_DIR)
 
     def stereoCalibrate(self, chessboardSize):
+        projCalibResults = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)
         patternCode = Patterns.CHESS_BOARD
-        patternImgs = self.patterns.genetare(patternCode,self.pSize,chessboardSize) # генериране само на бял шаблон
+        patternImgs = self.patterns.genetare(patternCode,projCalibResults["shape"],chessboardSize) # генериране само на бял шаблон
         pattType, patt = list(patternImgs.items())[0]
 
         self.projector.start()
         self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
         self.projector.stop()
-        self.cameraPi.stereoCalibrate(self.cameraPi.STEREO_CALIBRATION_DIR, self.cameraPi.CALIBRATION_DIR,
-            self.projector.CALIBRATION_DIR, chessboardSize)
+        self.cameraPi.stereoCalibrate(chessboardSize, projCalibResults)
 
 
     # Калибриране на камерата.
     # type: A-автоматичен,M-ръчен
-    def cameraCalibrate(self, chessboardSize, chessBlockSize, calibType='A'):
+    def cameraCalibrate(self, pSize, chessboardSize, chessBlockSize, calibType='A'):
         # бял шаблон
         patternCode = Patterns.WHITE
-        patternImgs = self.patterns.genetare(patternCode,self.pSize) # генериране само на бял шаблон
+        patternImgs = self.patterns.genetare(patternCode,pSize) # генериране само на бял шаблон
         pattType, patt = list(patternImgs.items())[0]
 
         self.projector.start()
@@ -93,9 +91,9 @@ class StructuredLight:
         self.turntable.step(19, self.turntable.CW) # връщане в изходна позиция
 
     # Калибриране на проектора
-    def projectorCalibrate(self, chessboardSize):
+    def projectorCalibrate(self, pSize, chessboardSize):
         patternCode = Patterns.CHESS_BOARD
-        patternImgs = self.patterns.genetare(patternCode,self.pSize,chessboardSize) # генериране само на бял шаблон
+        patternImgs = self.patterns.genetare(patternCode,pSize,chessboardSize) # генериране само на бял шаблон
         pattType, patt = list(patternImgs.items())[0]
 
         self.projector.start()
