@@ -25,10 +25,10 @@ def stereoCalib(args):
     scanY.stereoCalibrate(args.chessboardSize)
 
 def cCalib(args):
-    scanY.cameraCalibrate((args.pHeight,args.pWidth),args.chessboardSize, args.chessboardSize, args.calib_type)
+    scanY.cameraCalibrate((args.pHeight,args.pWidth),args.chessboardSize, args.chessboardSize, args.calib_type, args.calibImgCnt)
 
 def pCalib(args):
-    scanY.projectorCalibrate((args.pHeight,args.pWidth),args.chessboardSize)
+    scanY.projectorCalibrate((args.pHeight,args.pWidth),args.chessboardSize, args.calibImgCnt)
 
 def main():
     print("main")
@@ -71,14 +71,16 @@ if __name__=="__main__":
     parser_cCalib.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
     parser_cCalib.add_argument('chessboardSize', type=int, nargs='?',default = (6,8), help='Chessboard size. Default: (6,8)')
     parser_cCalib.add_argument('chessBlockSize', type=int, nargs='?',default = 16, help='Chessboard block size. Default: 16mm')
+    parser_cCalib.add_argument('calibImgCnt', type=int, nargs='?',default = 20, help='Count of calibratin images. Default: 20')
     parser_cCalib.set_defaults(func=cCalib)
 
     #Projector calibration
     parser_pCalib = subparsers.add_parser(
         'pCalib', help='Projector calibration')
-    parser_cCalib.add_argument('pHeight', type=int, nargs='?',default = 360, help='Projector height. Default: 360')
-    parser_cCalib.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
+    parser_pCalib.add_argument('pHeight', type=int, nargs='?',default = 360, help='Projector height. Default: 360')
+    parser_pCalib.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
     parser_pCalib.add_argument('chessboardSize', type=int, nargs='?',default = (6,8), help='Chessboard size. Default: (6,8)')
+    parser_pCalib.add_argument('calibImgCnt', type=int, nargs='?',default = 20, help='Count of calibratin images. Default: 20')
     parser_pCalib.set_defaults(func=pCalib)
 
     args = parser.parse_args()

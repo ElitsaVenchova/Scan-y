@@ -24,11 +24,11 @@ class StructuredLight:
         self.cameraPi = CameraPi() # камера
         self.patterns = Patterns() # шаблони
         self.projector = Projector() # проектор
-        self.reconstruct3D = Reconstruct3D(self.cameraPi) # реконструиране на обекта
 
     # Сканиране на 360*.
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
     def scan(self, patternCode):
+        reconstruct3D = Reconstruct3D(self.cameraPi) # реконструиране на обекта
         # шаблоните
         patternImgs = self.patterns.genetare(patternCode,self.cameraPi.stereoCalibrationRes['pShape']) # шаблоните
         # Матрицата за калибриране на проектора
@@ -42,7 +42,7 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-        self.reconstruct3D.reconstruct(self.SCAN_DIR)
+        reconstruct3D.reconstruct(self.SCAN_DIR)
 
     def stereoCalibrate(self, chessboardSize):
         projCalibResults = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)
@@ -73,8 +73,8 @@ class StructuredLight:
         self.projector.stop()
         self.cameraPi.calibrate(self.cameraPi.CALIBRATION_DIR, chessboardSize, chessBlockSize)
 
-    def manualCameraCalibrate(self, patternImgs,pattType, patt):
-        for i in range(0, 20):
+    def manualCameraCalibrate(self, patternImgs,pattType, patt, calibImgCnt):
+        for i in range(0, calibImgCnt):
             input('Fix image and press <<Enter>>!')
             self.scanCurrentStep(patt, self.cameraPi.CALIBRATION_DIR, pattType, i)
 
@@ -91,18 +91,18 @@ class StructuredLight:
         self.turntable.step(19, self.turntable.CW) # връщане в изходна позиция
 
     # Калибриране на проектора
-    def projectorCalibrate(self, pSize, chessboardSize):
+    def projectorCalibrate(self, pSize, chessboardSize, calibImgCnt):
         patternCode = Patterns.CHESS_BOARD
         patternImgs = self.patterns.genetare(patternCode,pSize,chessboardSize) # генериране само на бял шаблон
         pattType, patt = list(patternImgs.items())[0]
 
         self.projector.start()
-        for i in range(0, 20):
+        for i in range(0, calibImgCnt):
             input('Fix image and press <<Enter>>!')
             self.scanCurrentStep(patt, self.projector.CALIBRATION_DIR, pattType, i)
 
         self.projector.stop()
-        self.cameraPi.calibrate(self.projector.CALIBRATION_DIR,chessboardSize, 1) #Не може да се определи големината на шахматния квадрат
+        self.cameraPi.calibrate(self.projector.CALIBRATION_DIR,chessboardSize, 1, pSize) #Не може да се определи големината на шахматния квадрат
 
     def scanCurrentStep(self, patternImgs, dir, patternName, stepNo, pCalibrationRes=None):
         # итериране по шаблоните като enumerate добави пореден номер за улеснение

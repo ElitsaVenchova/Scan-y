@@ -87,11 +87,12 @@ class CameraPi:
         chessboardSize: Размерите на шаха.Трябва да са точни иначе findChessboardCorners ще върне false.
         (8,6)
         chessBlockSize: Ширина на едно кврадче от дъската
+        size: Размера на изображението. Попълва се при проектора.
         !!!ВАЖНО: В снимките за калибиране трябва да са такива, при които дъската е много близо до ръба,
                   защото иначе калибриране е грешно и изкривява крайното изображениета
             * https://answers.opencv.org/question/28438/undistortion-at-far-edges-of-image/
     """
-    def calibrate(self, calibrationDir, chessboardSize, chessBlockSize):
+    def calibrate(self, calibrationDir, chessboardSize, chessBlockSize, size=None):
         # Критерии за спиране на търсенето. Използва се в cornerSubPix, което намира по-точно ъглите на дъската
         # (type:COUNT,EPS or COUNT + EPS(2+1),maxCount iteration,
         # epsilon: при каква точност или промяна на стойност алгоритъма спира)
@@ -159,7 +160,7 @@ class CameraPi:
             print( "total error: {}".format(err))
             # запиване на резултата от калибрирането
             calibrationRes = {
-                "shape" : gray.shape,
+                "shape" : gray.shape if size is None else size, # записва се подадения ръчно размер, иначе се взима този на изображението(използва се за проектора)
                 "matrix": matrix,
                 "distortion": distortion,
                 "newCameraMatrix": newCameraMatrix,
@@ -252,7 +253,8 @@ class CameraPi:
         # отваряне на файл за записване на резултата от калибрацията
         fs = cv.FileStorage(stereoCalibrationDir + self.STEREO_CALIBRATION_FILE, cv.FILE_STORAGE_WRITE)
         # Параметри на камерата
-        fs.write('shape', stereoCalibrationRes["shape"])
+        fs.write('cShape', stereoCalibrationRes["cShape"])
+        fs.write('pShape', stereoCalibrationRes["pShape"])
         fs.write('cameraMatrix', stereoCalibrationRes["cameraMatrix"])
         fs.write('cameraDistortion', stereoCalibrationRes["cameraDistortion"])
         fs.write('projectorMatrix', stereoCalibrationRes["projectorMatrix"])
@@ -299,7 +301,8 @@ class CameraPi:
             fs = cv.FileStorage(stereoCalibResulPath, cv.FILE_STORAGE_READ)
             # Параметри на камерата
             stereoCalibrationRes = {
-                "shape" : fs.getNode('shape').mat().astype(int).flatten(),
+                "cShape" : fs.getNode('cShape').mat().astype(int).flatten(),
+                "pShape" : fs.getNode('pShape').mat().astype(int).flatten(),
                 "cameraMatrix" : fs.getNode('cameraMatrix').mat(),
                 "cameraDistortion" : fs.getNode('cameraDistortion').mat(),
                 "projectorMatrix" : fs.getNode('projectorMatrix').mat(),

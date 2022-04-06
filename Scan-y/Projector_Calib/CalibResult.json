@@ -4,7 +4,7 @@
         "rows": 2,
         "cols": 1,
         "dt": "d",
-        "data": [ 1079.0, 1919.0 ]
+        "data": [ 360.0, 615.0 ]
     },
     "matrix": {
         "type_id": "opencv-matrix",
