@@ -22,11 +22,11 @@ class Reconstruct3D:
 
     FILE_NAME = 'pointCloud.ply'
 
-    def __init__(self,piCamera):
-        self.piCamera = piCamera
+    def __init__(self,cameraPi):
+        self.cameraPi = cameraPi
 
-        self.pSize = self.piCamera.stereoCalibrationRes['pShape'] # Размер прожекцията
-        self.cSize = self.piCamera.stereoCalibrationRes['cShape'] # Размер камера
+        self.pSize = self.cameraPi.stereoCalibrationRes['pShape'] # Размер прожекцията
+        self.cSize = self.cameraPi.stereoCalibrationRes['cShape'] # Размер камера
 
         self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
@@ -43,7 +43,7 @@ class Reconstruct3D:
         self.mapGrayCode(dir)
         self.filterGrayCode()
         # @TODO: Тук има неуспешни опити да се направи реконструкция.
-        self.prespectiveTransform(self.piCamera.stereoCalibrationRes["disparityToDepthMatrix"])
+        self.prespectiveTransform(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"])
 
         self.savePointCloud(dir)
 
@@ -62,7 +62,7 @@ class Reconstruct3D:
         for fname in imgsNames:
             img = None
             if readType == 0:#От цветно изображението се прехвърля в черно бяло
-                img = self.piCamera.loadImage(fname,cv.IMREAD_GRAYSCALE)
+                img = self.cameraPi.loadImage(fname,cv.IMREAD_GRAYSCALE)
             else:# иначе цветно
                 img = cv.imread(fname)
             imgs.append(img)
