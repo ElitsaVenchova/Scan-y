@@ -30,7 +30,7 @@ class StructuredLight:
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
     def scan(self, patternCode):
         # шаблоните
-        patternImgs = self.patterns.genetare(patternCode,self.piCamera.stereoCalibrationRes['pShape']) # шаблоните
+        patternImgs = self.patterns.genetare(patternCode,self.cameraPi.stereoCalibrationRes['pShape']) # шаблоните
         # Матрицата за калибриране на проектора
         calibrationRes = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)
 

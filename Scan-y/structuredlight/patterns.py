@@ -38,7 +38,7 @@ class Patterns:
             patterns.update(self.black(pSize))
             patterns.update(self.opencvGray(pSize))
             return patterns
-        elif patternCode == self.OPENCV_GRAY_CODE:
+        elif patternCode == self.MANUAL_GRAY_CODE:
             return self.manualGray(pSize)
         elif patternCode == self.PHASE_SHIFTING:
             return self.phaseShifting(pSize)
@@ -88,7 +88,7 @@ class Patterns:
     """
     def manualGray(self, pSize):
         height, width = pSize
-        # patternCnt = int(math.log2(width))+1
+        patternCnt = int(math.log2(width))+1
         # #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         # #<<Горното2>> = (<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
         # #<<Горното2>>%2 - за четни двойки 0, иначе 1
