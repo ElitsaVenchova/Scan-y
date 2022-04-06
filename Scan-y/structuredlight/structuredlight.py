@@ -42,7 +42,7 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-        reconstruct3D.reconstruct(self.SCAN_DIR)
+        reconstruct3D.reconstruct(self.SCAN_DIR, patternCode)
 
     def stereoCalibrate(self, chessboardSize):
         projCalibResults = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)

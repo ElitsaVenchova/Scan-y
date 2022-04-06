@@ -30,17 +30,17 @@ class Reconstruct3D:
 
         self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
-        self.whiteImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
+        self.colorImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.float32)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.pointCloud = np.zeros(self.cSize, np.float32)
 
-    def reconstruct(self, dir):
-        self.whiteImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)
+    def reconstruct(self, dir, patternCode):
+        self.colorImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)[0]
 
         # TODO: Да се направи ръчно мапиране, защото това не работи много добре.
         # Идеята е да се взима средно аритметично на пиксела между white и black, което да е граница.
         # След това стойностите ще се определят с мнозинство между Img, ImgInv, ImgTrans и ImgTransInv
-        self.mapGrayCode(dir)
+        self.manualMapGrayCode(dir, patternCode)
         self.filterGrayCode()
         # @TODO: Тук има неуспешни опити да се направи реконструкция.
         self.prespectiveTransform(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"])
@@ -57,11 +57,12 @@ class Reconstruct3D:
 
     #Прочита изображенията за определен шаблон
     def readImages(self, dir, patternCode, readType):
+        print('./{0}/image70{1}*.jpg'.format(dir,patternCode))
         imgsNames = natsorted(glob.glob('./{0}/image70{1}*.jpg'.format(dir,patternCode)))
         imgs = []
         for fname in imgsNames:
             img = None
-            if readType == 0:#От цветно изображението се прехвърля в черно бяло
+            if readType == self.BLACK_N_WHITE:#От цветно изображението се прехвърля в черно бяло
                 img = self.cameraPi.loadImage(fname,cv.IMREAD_GRAYSCALE)
             else:# иначе цветно
                 img = cv.imread(fname)
@@ -71,7 +72,7 @@ class Reconstruct3D:
     def autoMapGrayCode(self, dir):
         white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0]
         black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0]
-        grayCodeImgs = self.readImages(dir, Patterns.GRAY_CODE_PATTERN, self.BLACK_N_WHITE)
+        grayCodeImgs = self.readImages(dir, Patterns.OPENCV_GRAY_CODE, self.BLACK_N_WHITE)
 
         graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1])
         graycode.setBlackThreshold(self.BLACK_THRESHOLD)
@@ -94,20 +95,73 @@ class Reconstruct3D:
                     self.mask[y, x] = 255
         print(yerr,nerr)#1 256 929-63 764
 
-    def manualMapGrayCode(self, dir):
-        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0]
-        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0]
-        # Съдържа измерените стойности за пикселите в 4-те различни варианта
+    def manualMapGrayCode(self, dir, patternCode):
+        yerr, nerr = 0,0 # За debug - колко намерени пиксела има и колко пиксела нямат успешна сума 15.
+        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0] # Напълно осветено изображение
+        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0] # Тъмно изображение
+
+        print(patternCode)
+        patternImgs = Patterns().genetare(patternCode, self.pSize) # Шаблоните
+
+        # Съдържа изображенията в 4-те различни варианта
+        grayCodeImgs = {
+            Patterns.IMAGE_PATTERN: self.readImages(dir, Patterns.IMAGE_PATTERN, self.BLACK_N_WHITE),
+            Patterns.INV_PATTERN: self.readImages(dir, Patterns.INV_PATTERN, self.BLACK_N_WHITE),
+            Patterns.TRANS_PATTERN: self.readImages(dir, Patterns.TRANS_PATTERN, self.BLACK_N_WHITE),
+            Patterns.TRANS_INV_PATTERN: self.readImages(dir, Patterns.TRANS_INV_PATTERN, self.BLACK_N_WHITE)}
+
+        # Съдържа измерените стойности за пикселите на изображенията в 4-те различни варианта
+        # 3-тото измерение има две стойности - една от изображенията и една от шаблоните.
         tempGrayCodeMap = {
-            self.IMAGE_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32),
-            self.INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32),
-            self.TRANS_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32),
-            self.TRANS_INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1], 2), np.float32)}
-        patternImg = Patterns.genetare(Patterns.WHITE_PATTERN)
+            Patterns.IMAGE_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32),
+            Patterns.INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32),
+            Patterns.TRANS_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32),
+            Patterns.TRANS_INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32)}
 
-        grayCodeImgs = self.readImages(dir, Patterns.GRAY_CODE_PATTERN, self.BLACK_N_WHITE)
+        # Съдържа измерените стойности за пикселите на шаблоните в 4-те различни варианта
+        tempPattGrayCodeMap = {
+            Patterns.IMAGE_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32),
+            Patterns.INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32),
+            Patterns.TRANS_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32),
+            Patterns.TRANS_INV_PATTERN: np.zeros((self.cSize[0],self.cSize[1]), np.float32)}
 
+        for pattType in patternImgs:
+            if len(grayCodeImgs[pattType]) != len(patternImgs[pattType]):
+                raise ValueError('Number of patterns and images is not equal!')
+            for i in range(len(grayCodeImgs[pattType])):
+                for y in range(self.cSize[0]):
+                    for x in range(self.cSize[1]):
+                        whiteThreshold = white[y,x] #Цвета на пиксела, когато е осветен
+                        blackThreshold = black[y,x] #Цвета на пиксела, когато не е осветен
+                        grayCodePixel = grayCodeImgs[pattType][y,x] #Цвета на пиксела за конкретния шаблон
+                        # ако пиксела е бял(по-голямо от средно аритметичното между черното и бялото), то се добавя 2^i към mapping-а в първата колона.
+                        if grayCodePixel > (whiteThreshold+blackThreshold)/2:
+                            tempGrayCodeMap[pattType][y,x] += pow(2,i)
+                        # Проекторът е с по-малка резолюция от камерата и затова се проверява дали няма да се излезе от масива.
+                        # ако пиксела е бял, то се добавя 2^i към mapping-а във вторака колона.
+                        if y < self.pSize[0] and x < self.pSize[1] and patternImgs[pattType][y,x] == 255:
+                            tempPattGrayCodeMap[pattType][y,x] += pow(2,i)
 
+        for cY in range(self.cSize[0]):
+            for cX in range(self.cSize[1]):
+                # Сбора на стойността в пискела и обратния(Inverse) шаблона трябва да е 15. Аналогично и са транспонираните шаблони.
+                if (tempGrayCodeMap[Patterns.IMAGE_PATTERN] + tempGrayCodeMap[Patterns.INV_PATTERN] != 15 or
+                    tempGrayCodeMap[Patterns.TRANS_PATTERN] + tempGrayCodeMap[Patterns.TRANS_INV_PATTERN] != 15):
+                    nerr += 1
+                    continue
+                for pY in range(self.pSize[0]):
+                    for pX in range(self.pSize[1]):
+                        # Трябва стойността на пиксела от изображението да съответства на този на шаблона и аналогично да има съответствие при транспонирания шаблон.=.
+                        # Обратните(inverse) шаблони са само контролни и не е необходимо да се търси съвпадение при тях.
+                        if (tempGrayCodeMap[Patterns.IMAGE_PATTERN] == tempPattGrayCodeMap[Patterns.IMAGE_PATTERN] and
+                           tempGrayCodeMap[Patterns.TRANS_PATTERN] == tempPattGrayCodeMap[Patterns.TRANS_PATTERN]):
+                            dist = math.sqrt(pow(cY-pY,2) + pow(cX-pX,2))#разстоянието между точките в изборажението и шаблона
+                            self.grayCodeMap[y, x, :] = np.array([cY,cX,dist])#записва съответствята на координатите между снимките и шаблоните
+                            #мареика се като бяло, т.е. има съвпадение
+                            self.mask[cY, cX] = 255
+                            yerr += 1
+
+        print(yerr,nerr)#1 256 929-63 764
 
     # smoothing filter
     def filterGrayCode(self):
@@ -142,7 +196,8 @@ class Reconstruct3D:
             self.mask = ext_mask
 
     def prespectiveTransform(self,q_matrix):
-        self.pointCloud = cv.perspectiveTransform(self.grayCodeMap, q_matrix)
+        self.pointCloud = cv.perspectiveTransform(self.grayCodeMap, q_matrix) # за по-редки съвпадащи точки
+        # self.pointCloud = cv.reprojectImageTo3D(???, q_matrix) # за по-гъсти съвпадащи точки
 
     def savePointCloud(self,dir):
         with open(dir + '/'+self.FILE_NAME,'w') as fid:

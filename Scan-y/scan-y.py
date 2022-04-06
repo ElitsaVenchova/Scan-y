@@ -2,6 +2,7 @@
 Structure light 3D scanner
 
 @TODO:
+    * Reconstruct3D.readImages - в момента се чете забито сканирен "70". Трябва да се направи на параметър.
     * Да се оправи проблема с разликата между броя записи в Mask и реалните валидни записи при запазването на ply файла.
     * Собствена реалциация на gray code mapping.
     * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
@@ -34,7 +35,7 @@ def main():
     print("main")
 
     # patterns = sl.Patterns() # шаблони
-    # patternsArr = patterns.genetare(6,pSize,chessboardSize) # шаблоните
+    # patternsArr = patterns.genetare(3,(360,615),16) # шаблоните
     # for key, pattr in patternsArr.items():
     #     for i,img in enumerate(pattr):
     #         print(img.shape)
@@ -43,7 +44,6 @@ def main():
     #     cv.destroyAllWindows()
 
 if __name__=="__main__":
-    chessBlockSize = 16 # mm
 
     parser = argparse.ArgumentParser(
         description='Scan-y 3D structured light scanner\n',
