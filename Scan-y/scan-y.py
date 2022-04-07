@@ -2,6 +2,8 @@
 Structure light 3D scanner
 
 @TODO:
+    * За получаване на минимална разлика между пиксели трябва да се направи Lagrange Interpolation
+        * https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
     * Reconstruct3D.readImages - в момента се чете забито сканирен "70". Трябва да се направи на параметър.
     * Да се оправи проблема с разликата между броя записи в Mask и реалните валидни записи при запазването на ply файла.
     * Собствена реалциация на gray code mapping.

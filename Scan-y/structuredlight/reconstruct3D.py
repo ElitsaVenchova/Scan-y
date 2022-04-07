@@ -156,6 +156,7 @@ class Reconstruct3D:
                         if (tempGrayCodeMap[Patterns.IMAGE_PATTERN] == tempPattGrayCodeMap[Patterns.IMAGE_PATTERN] and
                            tempGrayCodeMap[Patterns.TRANS_PATTERN] == tempPattGrayCodeMap[Patterns.TRANS_PATTERN]):
                             dist = math.sqrt(pow(cY-pY,2) + pow(cX-pX,2))#разстоянието между точките в изборажението и шаблона
+                            # @TODO: Да се направи Lagrange Interpolation https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
                             self.grayCodeMap[y, x, :] = np.array([cY,cX,dist])#записва съответствята на координатите между снимките и шаблоните
                             #мареика се като бяло, т.е. има съвпадение
                             self.mask[cY, cX] = 255
