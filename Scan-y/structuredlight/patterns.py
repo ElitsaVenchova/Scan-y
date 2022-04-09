@@ -53,7 +53,7 @@ class Patterns:
         elif patternCode == self.STRIPE:
             return self.stripe(pSize)
         elif patternCode == self.CHESS_BOARD:
-            return self.chessboard(pSize,chessboardSize)
+            return self.chessboardAll(pSize,chessboardSize)
         else:
             raise ValueError('Bad pattern code!')
 
@@ -146,6 +146,19 @@ class Patterns:
         pSize - размери на проекториа
         chessboardSize - бр. пресичания на черен и черен квадрат по диагонал
     """
+    def chessboardAll(self, pSize, chessboardSize):
+        chW,chH = chessboardSize
+        imgMatr = self.chessboard(pSize,(chW,chH))
+        imgMatrTrans = self.chessboard(pSize,(chH,chW))
+        
+        return {self.CHESS_BOARD_PATTERN: np.array([imgMatr[0],imgMatrTrans[0]])}
+
+
+    """
+        Шахматна дъска за калибриране на проектора
+        pSize - размери на проекториа
+        chessboardSize - бр. пресичания на черен и черен квадрат по диагонал
+    """
     def chessboard(self, pSize, chessboardSize):
         height, width = pSize
         rowsCnt,colsCnt = (chessboardSize[0]+1,chessboardSize[1]+1)#бр. квадрати по ширина и дължина, за да удовлетовори chessboardSize
@@ -163,7 +176,7 @@ class Patterns:
         imgMatr = np.roll(imgMatr, int(rightPad/2), axis=1) #прехвърлят се пикселите от дясно->в ляво, за да се получи еднаква дупка от двете страни
         imgMatr = np.reshape(imgMatr,(1,height,width))
 
-        return {self.CHESS_BOARD_PATTERN: imgMatr}
+        return imgMatr
 
     # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
     # pSize = (width, height)

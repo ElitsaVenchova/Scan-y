@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import math
 import os
+import time
 
 from .patterns import Patterns
 from .cameraPi import CameraPi
@@ -48,10 +49,10 @@ class StructuredLight:
         projCalibResults = self.cameraPi.readCalibrationResult(self.projector.CALIBRATION_DIR)
         patternCode = Patterns.CHESS_BOARD
         patternImgs = self.patterns.genetare(patternCode,projCalibResults["shape"],chessboardSize) # генериране само на бял шаблон
-        pattType, patt = list(patternImgs.items())[0]
-
+        
         self.projector.start()
-        self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
+        for pattType, patt in patternImgs.items():
+            self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
         self.projector.stop()
         self.cameraPi.stereoCalibrate(chessboardSize, projCalibResults)
 
@@ -113,4 +114,5 @@ class StructuredLight:
                 img = self.cameraPi.undistortImage(img,pCalibrationRes)
             # cv.imshow('image',img)
             self.projector.playImage(img)
+            time.sleep(2)
             self.cameraPi.takePhoto(dir,'{0}{1}{2}'.format(stepNo,patternName,i))
