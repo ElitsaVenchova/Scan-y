@@ -2,11 +2,11 @@
 Structure light 3D scanner
 
 @TODO:
+    * Да кача от телефона новите изображения в /setup_photos
     * За получаване на минимална разлика между пиксели трябва да се направи Lagrange Interpolation
         * https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
     * Reconstruct3D.readImages - в момента се чете забито сканирен "70". Трябва да се направи на параметър.
     * Да се оправи проблема с разликата между броя записи в Mask и реалните валидни записи при запазването на ply файла.
-    * Собствена реалциация на gray code mapping.
     * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
     * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
     * Web app
@@ -35,18 +35,21 @@ def pCalib(args):
 
 def main():
     print("main")
-
-    # patterns = sl.Patterns() # шаблони
-    # patternsArr = patterns.genetare(3,(360,615),16) # шаблоните
+    
+    # patternsArr = scanY.patterns.genetare(3,(360,615),(6,8)) # шаблоните
     # for key, pattr in patternsArr.items():
     #     for i,img in enumerate(pattr):
+    #         # img = scanY.cameraPi.undistortImage(img,scanY.cameraPi.stereoCalibrationRes["cameraMatrix"], 
+    #         #                           scanY.cameraPi.stereoCalibrationRes["cameraDistortion"], None,
+    #         #                           scanY.cameraPi.stereoCalibrationRes["cRoi"])
     #         print(img.shape)
     #         cv.imshow(key,img)
     #         cv.waitKey(0)
     #     cv.destroyAllWindows()
 
 if __name__=="__main__":
-
+    scanY = sl.StructuredLight()
+      
     parser = argparse.ArgumentParser(
         description='Scan-y 3D structured light scanner\n',
         formatter_class=argparse.RawTextHelpFormatter)
@@ -87,7 +90,6 @@ if __name__=="__main__":
 
     args = parser.parse_args()
     if hasattr(args, 'func'):
-        scanY = sl.StructuredLight()
         args.func(args)
     else:
         parser.print_help()

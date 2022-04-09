@@ -88,7 +88,7 @@ class Patterns:
     """
     def manualGray(self, pSize):
         height, width = pSize
-        patternCnt = int(math.log2(width))+1
+        patternCnt = int(math.log2(width))#+1#Има още един шаблон, където всяко рае е с ширина 1 пиксел, но проекторът не е с толкова висока резолюция, за да се вижда.
         # #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         # #<<Горното2>> = (<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
         # #<<Горното2>>%2 - за четни двойки 0, иначе 1
@@ -121,7 +121,7 @@ class Patterns:
     """
     def binary(self, pSize):
         height, width = pSize
-        patternCnt = int(math.log2(width))+1
+        patternCnt = int(math.log2(width))#+1#Има още един шаблон, където всяко рае е с ширина 1 пиксел, но проекторът не е с толкова висока резолюция, за да се вижда.
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
         imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]

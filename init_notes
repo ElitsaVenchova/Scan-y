@@ -32,6 +32,8 @@ git commit -m "Commit message" --Commit changes to head (but not yet to the remo
 git push origin master 	       --Send changes to the master branch of your remote repository
 git pull		       --Chechout changes
 git reset --hard origin	       --Hard reset on conflicts
+git checkout <filename>		--Invert file changes
+git diff <filename>		--Compare local file with repository. Check local changes
 --
 python3 app.py		       --start server | http://0.0.0.0:5000/ или http://127.0.0.1:5000/ | Ctrl+C --stop server
 python3 webstreaming.py --ip 0.0.0.0 --port 8000

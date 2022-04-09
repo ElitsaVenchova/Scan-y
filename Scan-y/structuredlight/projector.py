@@ -13,9 +13,10 @@ class Projector:
     CHESS_BOARD_PATTERN = "/chessboard.jpg" # Файл с резултата от калибрирането
 
     # Стартира HDMI порта, ако не е
-    def __init__(self):
+    def __init__(self, cameraPi):
         # pass
         subprocess.call('vcgencmd display_power 1', shell=True)
+        self.pCalibrationRes = cameraPi.readCalibrationResult(self.CALIBRATION_DIR)
 
     # стартира VLC и задава full screen
     def start(self):
