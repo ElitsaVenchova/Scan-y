@@ -39,27 +39,37 @@ class CameraPi:
             camera.stop_preview()
         return imageFullName
 
+    def getUndistortCalibrationRes(self, dir):
+        calibRes = None
+        # Ако е калибриране на прожектора, то се прилага калибрирането на камерата
+        if dir.startswith(Projector.CALIBRATION_DIR):
+            calibRes= {
+                "matrix" : self.cCalibrationRes["matrix"],
+                "distortion" : self.cCalibrationRes["distortion"],
+                "newCameraMatrix": self.cCalibrationRes["newCameraMatrix"],
+                "roi": self.cCalibrationRes["roi"]
+                }
+        # Ако не е калибриране на камерата или стерео, то се опитва да се приложи резултата от стерео к
+        elif (not dir.startswith(self.CALIBRATION_DIR) and
+                not dir.startswith(self.STEREO_CALIBRATION_DIR)):
+            # При стерео калибрацията няма newCameraMatrix и се подава None
+            # тогава се оправяне на изкривяването се използва само matrix
+            calibRes= {
+                "matrix" : self.stereoCalibrationRes["cameraMatrix"],
+                "distortion" : self.stereoCalibrationRes["cameraDistortion"],
+                "newCameraMatrix": None,
+                "roi": self.stereoCalibrationRes["cRoi"]
+                }
+        return calibRes
+
     # Зарежда изображенията и "изправя изображението", ако е приложимо
     def loadImage(self, fname,flag=cv.IMREAD_COLOR):
         img = cv.imread(fname, flag)
         matrix, distortion, newCameraMatrix, roi = (None,None,None,None)
-        # Ако е калибриране на прожектора, то се прилага калибрирането на камерата
-        if fname.startswith(Projector.CALIBRATION_DIR):
-            matrix = self.cCalibrationRes["matrix"]
-            distortion = self.cCalibrationRes["distortion"]
-            newCameraMatrix = self.cCalibrationRes["newCameraMatrix"]
-            roi = self.cCalibrationRes["roi"]
-        # Ако не е калибриране на камерата или стерео, то се опитва да се приложи резултата от стерео к
-        elif (not fname.startswith(self.CALIBRATION_DIR) and
-                not fname.startswith(self.STEREO_CALIBRATION_DIR)):
-            # При стерео калибрацията няма newCameraMatrix и се подава None
-            # тогава се оправяне на изкривяването се използва само matrix
-            matrix = self.stereoCalibrationRes["cameraMatrix"]
-            distortion = self.stereoCalibrationRes["cameraDistortion"]
-            roi = self.stereoCalibrationRes["cRoi"]
+        calibRes = self.getUndistortCalibrationRes(fname)
             
-        if matrix != None:
-            img = self.undistortImage(img,matrix, distortion, newCameraMatrix, roi)
+        if calibRes != None:
+            img = self.undistortImage(img,calibRes)
         return img
 
     """
@@ -189,9 +199,7 @@ class CameraPi:
 
             # Прочитане на резултата от калибрирането
             calibrationRes = self.readCalibrationResult(calibrationDir)
-            img = self.undistortImage(img, calibrationRes["matrix"], calibrationRes["distortion"],
-                                      calibrationRes["newCameraMatrix"], calibrationRes["roi"], calibrationDir)
-
+            img = self.undistortImage(img, calibrationRes, calibrationDir)
         else:
             raise ValueError('Not enough matched patterns({0})!'.format(matched_pattern_cnt))
 
@@ -238,13 +246,15 @@ class CameraPi:
         return (objpoints, camImgpoints, projImgpoints)
 
     # Калибриране на изображението
-    def undistortImage(self, img, matrix, distortion, newCameraMatrix, roi, calibrationDir=None):
+    def undistortImage(self, img, calibrationRes, calibrationDir=None):
         # Премахване на изкривяването
-        dst = cv.undistort(img, matrix, distortion, None, newCameraMatrix)
+        dst = cv.undistort(img, calibrationRes["matrix"], calibrationRes["distortion"], None, calibrationRes["newCameraMatrix"])
         
+        # СПИРА СЕ ИЗРЯЗВАНЕТО ПО ROI, ЗАЩОТО ВИНАГИ ТРЯБВА ПЪЛНОТО ИЗОБРАЖЕНИЕ
+        # СЪЩО stereoRectify ВРЪЩА ВИНАГИ 0,0,0,0 И ТРЯБВА ДА СЕ ОПРАВИ, АКО ЩЕ СЕ ПРИЛАГА ИЗРЯЗВАНЕ НА НЕВАЛИДНИ ПИКСЕЛИ
         # Изрязване на изображението. Всяка стойност е масив, затова с flatten се преобразува от 2D в 1D масив
-        x,y,w,h = roi.flatten().astype(int)
-        dst = dst[y:y+h, x:x+w]
+        # x,y,w,h = calibrationRes["roi"].flatten().astype(int)
+        # dst = dst[y:y+h, x:x+w]
         
         if calibrationDir != None:
             cv.imwrite(calibrationDir + self.CALIBRATION_RES_IMAGE, dst)

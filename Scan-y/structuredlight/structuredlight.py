@@ -32,25 +32,26 @@ class StructuredLight:
         reconstruct3D = Reconstruct3D(self.cameraPi) # реконструиране на обекта
         # шаблоните
         patternImgs = self.patterns.genetare(patternCode,self.cameraPi.stereoCalibrationRes['pShape']) # шаблоните
+        calibRes = self.cameraPi.getUndistortCalibrationRes(self.SCAN_DIR)
 
         self.projector.start()
         # интериране позициите на масата за завъртане на 360*
         for i in range(0, self.turntable.SPR, self.STEP_SIZE):
             for pattType, patt in patternImgs.items():
-                self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i, self.cameraPi.stereoCalibrationRes)
+                self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i, calibRes)
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-        reconstruct3D.reconstruct(self.SCAN_DIR, patternCode)
+        #reconstruct3D.reconstruct(self.SCAN_DIR, patternCode)
 
     def stereoCalibrate(self, chessboardSize):
         patternCode = Patterns.CHESS_BOARD
         patternImgs = self.patterns.genetare(patternCode,self.projector.pCalibrationRes["shape"],chessboardSize) # генериране само на бял шаблон
         
-#         self.projector.start()
-#         for pattType, patt in patternImgs.items():
-#             self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
-#         self.projector.stop()
+        self.projector.start()
+        for pattType, patt in patternImgs.items():
+            self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
+        self.projector.stop()
         self.cameraPi.stereoCalibrate(chessboardSize, self.projector.pCalibrationRes)
 
 
@@ -107,7 +108,7 @@ class StructuredLight:
         for i,img in enumerate(patternImgs):
             # Ако има налична калибрация на проетора и извикването не за калибриране на проектора,
             # то първо се "изправя изображението" преди да се прожектира
-            if pCalibrationRes != None and dir != self.projector.CALIBRATION_DIR:
+            if pCalibrationRes != None:
                 img = self.cameraPi.undistortImage(img,pCalibrationRes)
             # cv.imshow('image',img)
             self.projector.playImage(img)
