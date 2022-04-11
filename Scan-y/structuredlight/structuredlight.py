@@ -42,12 +42,12 @@ class StructuredLight:
             self.turntable.step(self.STEP_SIZE)
         self.projector.stop()
 
-        #reconstruct3D.reconstruct(self.SCAN_DIR, patternCode)
+        reconstruct3D.reconstruct(self.SCAN_DIR, patternCode)
 
     def stereoCalibrate(self, chessboardSize):
         patternCode = Patterns.CHESS_BOARD
         patternImgs = self.patterns.genetare(patternCode,self.projector.pCalibrationRes["shape"],chessboardSize) # генериране само на бял шаблон
-        
+
         self.projector.start()
         for pattType, patt in patternImgs.items():
             self.scanCurrentStep(patt, self.cameraPi.STEREO_CALIBRATION_DIR, pattType, 0)
