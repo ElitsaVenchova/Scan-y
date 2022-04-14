@@ -4,6 +4,7 @@ from .patterns import Patterns
 from natsort import natsorted
 import glob
 import math
+import open3d as o3d
 
 from matplotlib import pyplot as plt
 # import open3d as o3d
@@ -17,10 +18,10 @@ class Reconstruct3D:
     BLACK_THRESHOLD = 20#праг на черното
     WHITE_THRESHOLD = 4#праг на бялото
 
-    BLACK_N_WHITE = 0
-    COLOR = 1
+    BLACK_N_WHITE = 0 #Флаг, изображението да се прочете като черно бяло
+    COLOR = 1 # Флаг, изображението да се прочете като цветно
 
-    FILE_NAME = 'pointCloud.ply'
+    FILE_NAME = 'pointCloud'
 
     def __init__(self,cameraPi):
         self.cameraPi = cameraPi
@@ -32,55 +33,55 @@ class Reconstruct3D:
 
         self.colorImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.float32)#връзката на координатите на пикселите на снимката и шаблона GrayCode
-        self.pointCloud = np.zeros(self.cSize, np.float32)
+        self.pointCloud = np.zeros(self.cSize, np.float32) # крайния резултат. Облак от точки.
 
-    def reconstruct(self, dir, patternCode):
-        # TODO: Да се направи ръчно мапиране, защото това не работи много добре.
-        # Идеята е да се взима средно аритметично на пиксела между white и black, което да е граница.
-        # След това стойностите ще се определят с мнозинство между Img, ImgInv, ImgTrans и ImgTransInv
-        self.manualMapGrayCode(dir, patternCode)
-        # self.autoMapGrayCode(dir)
+    #
+    """
+        Основната функция за реконструкция.
+        Обхождат се сканиранията на различните гледни точки, прави се Point Cloud за тях,
+        обединяват се всички point clounds в общ 360 градусово изображение
+        Прави се point mesh
+    """
+    def reconstruct(self, dir, patternCode, stepsCnt, stepSize):
 
-        self.filterGrayCode()
-        # @TODO: Тук има неуспешни опити да се направи реконструкция.
-        self.prespectiveTransform(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"])
+        for scan_no in range(0, stepsCnt, stepSize):
+            self.manualMapGrayCode(dir, patternCode, scan_no) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
+            # self.autoMapGrayCode(dir) # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
 
-        self.savePointCloud(dir)
+            # self.filterGrayCode() # smoothing filter. Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
+            # self.genPointCloud(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"]) # преобразуване на disparity в дълбочина.
 
-        #pcd = o3d.io.read_point_cloud(dir + '/'+self.FILE_NAME)
-        #print(pcd)
-#         #http://www.open3d.org/docs/latest/tutorial/Advanced/surface_reconstruction.html
-#             mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=9)
-#             o3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)
-#         Multi view matching - http://www.open3d.org/docs/release/tutorial/pipelines/multiway_registration.html
-#         Color map optimisation - http://www.open3d.org/docs/release/tutorial/pipelines/color_map_optimization.html
+            self.savePointCloud(dir, scan_no) # Запазване на облака от точки като xyzrbg файл
+            # self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
+
 
     #Прочита изображенията за определен шаблон
-    def readImages(self, dir, patternCode, readType,img_no='?'):
+    def readImages(self, dir, patternCode,  readType, scan_no = '', img_no='?'):
         # Зареждат се всички изображения, които отговорят на шаблона
         # img_no - ?(точно един символ),*(0 или повече символи),конретно чисто(зарежда изображението с конкретен номер)
-        imgsNames = natsorted(glob.glob('./{0}/image10{1}{2}.jpg'.format(dir,patternCode,img_no)))
-        imgs = [] # np.empty([2, 2]
+        imgsNames = natsorted(glob.glob('./{0}/image{1}{2}{3}.jpg'.format(dir,scan_no,patternCode,img_no)))
+        imgs = [] # масив със заредените изображения
+        img = None
         for fname in imgsNames:
-            img = None
-            if readType == self.BLACK_N_WHITE:#От цветно изображението се прехвърля в черно бяло
+            if readType == self.BLACK_N_WHITE:#Изображението се прочита черно бяло
                 img = self.cameraPi.loadImage(fname,cv.IMREAD_GRAYSCALE)
             else:# иначе цветно
-                img = cv.imread(fname)
+                img = self.cameraPi.loadImage(fname)
             imgs.append(img)
         return np.array(imgs)
 
+    # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
     def autoMapGrayCode(self, dir):
         self.colorImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)[0]
 
-        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0]
-        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0]
-        grayCodeImgs = self.readImages(dir, Patterns.OPENCV_GRAY_CODE, self.BLACK_N_WHITE)
+        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0] # Напълно осветено изображение
+        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0] # Тъмно изображение
+        grayCodeImgs = self.readImages(dir, Patterns.OPENCV_GRAY_CODE, self.BLACK_N_WHITE) # GrayCode изображенията
 
-        graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1])
-        graycode.setBlackThreshold(self.BLACK_THRESHOLD)
-        graycode.setWhiteThreshold(self.WHITE_THRESHOLD)
-        yerr, nerr = 0,0
+        graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1]) # Шаблоните
+        graycode.setBlackThreshold(self.BLACK_THRESHOLD) # задаване на праг на бялото
+        graycode.setWhiteThreshold(self.WHITE_THRESHOLD) # задаване на праг на черното
+        yerr, nerr = 0,0 # за DEBUG - за колко пиксела има успешно съвпадение
         for y in range(self.cSize[0]):
             for x in range(self.cSize[1]):
                 if (y>=white.shape[0] or x>=white.shape[1] or
@@ -94,26 +95,28 @@ class Reconstruct3D:
                     nerr+=1
                     dist = math.sqrt(pow(y-proj_pix[0],2) + pow(x-proj_pix[1],2))#разстоянието между ъточките в едната и др. коорд.
                     self.grayCodeMap[y, x, :] = np.array([proj_pix[0],proj_pix[1],dist])#записва съответствята на координатите между снимките и шаблоните
-                    #мареика се като бяло, т.е. има съвпадение
+                    #маркира се като бяло, т.е. има съвпадение
                     self.mask[y, x] = 255
         print(yerr,nerr)#1 256 929-63 764
 
-    def manualMapGrayCode(self, dir, patternCode):
-        self.colorImg = self.readImages(dir, Patterns.INV_PATTERN, self.COLOR, '0')[0] #Първият шаблон от Inverse е изцяло бял
+    # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
+    # Горното не работи много вярно
+    def manualMapGrayCode(self, dir, patternCode, scan_no):
+        self.colorImg = self.readImages(dir, Patterns.INV_PATTERN, self.COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
 
-        yerr, nerr = 0,0 # За debug - колко намерени пиксела има и колко пиксела нямат успешна сума 15.
-        white = self.readImages(dir, Patterns.INV_PATTERN, self.BLACK_N_WHITE)[0] # Напълно осветено изображение #Първият шаблон от Inverse е изцяло бял
-        black = self.readImages(dir, Patterns.IMAGE_PATTERN, self.BLACK_N_WHITE)[0] # Тъмно изображение #Първият шаблон от Img е изцяло черен
-
-        print('Pattern code: ', patternCode)
+        print('Pattern code: ', patternCode, '; scan_no: ', scan_no)
         patternImgs = Patterns().genetare(patternCode, self.pSize) # Шаблоните
 
         # Съдържа изображенията в 4-те различни варианта
         grayCodeImgs = {
-            Patterns.IMAGE_PATTERN: self.readImages(dir, Patterns.IMAGE_PATTERN, self.BLACK_N_WHITE),
-            Patterns.INV_PATTERN: self.readImages(dir, Patterns.INV_PATTERN, self.BLACK_N_WHITE),
-            Patterns.TRANS_PATTERN: self.readImages(dir, Patterns.TRANS_PATTERN, self.BLACK_N_WHITE),
-            Patterns.TRANS_INV_PATTERN: self.readImages(dir, Patterns.TRANS_INV_PATTERN, self.BLACK_N_WHITE)}
+            Patterns.IMAGE_PATTERN: self.readImages(dir, Patterns.IMAGE_PATTERN, self.BLACK_N_WHITE, scan_no),
+            Patterns.INV_PATTERN: self.readImages(dir, Patterns.INV_PATTERN, self.BLACK_N_WHITE, scan_no),
+            Patterns.TRANS_PATTERN: self.readImages(dir, Patterns.TRANS_PATTERN, self.BLACK_N_WHITE, scan_no),
+            Patterns.TRANS_INV_PATTERN: self.readImages(dir, Patterns.TRANS_INV_PATTERN, self.BLACK_N_WHITE, scan_no)}
+
+        yerr = 0 # За debug - колко намерени пиксела има
+        white = grayCodeImgs[Patterns.INV_PATTERN][0] # Напълно осветено изображение #Първият шаблон от Inverse е изцяло бял
+        black = grayCodeImgs[Patterns.IMAGE_PATTERN][0] # Тъмно изображение #Първият шаблон от Img е изцяло черен
 
         # Съдържа измерените стойности за пикселите на изображенията в 4-те различни варианта
         tempGrayCodeMap = {
@@ -133,80 +136,69 @@ class Reconstruct3D:
             print(pattType)
             if len(grayCodeImgs[pattType]) != len(patternImgs[pattType]):
                 raise ValueError('Number of patterns and images is not equal for pattern ',pattType,'(',len(grayCodeImgs[pattType]),len(patternImgs[pattType]),')!')
-            # Не изглежда елегантно, но създава
-            # <#>np.arange(0,4) - генерира степените за повдихане при основа 2. [0,1,2,3]
-            # <!>np.expand_dims(np.expand_dims(<#>, axis=1), axis=1) - Два пъти обавя измерение в масива: [[0],[1],[2],....] и втория път в [[[0]],[[1]],[[2]],[[3]]]
-            # <!>.repeat(3, axis=2).repeat(2, axis=1) - Два пъти копира съдържаниет ов масива(един в най-вътрешното и след това по-горното измерени)
-                # [[[0,0,0]],[[1,1,1]],[[2,2,2]],[[3,3,3]]] и втория път копира единичните масиви [[[0,0,0],[0,0,0]],[[1,1,1],[1,1,1]],[[2,2,2],[2,2,2]],[[3,3,3],[3,3,3]]]
-            ind = np.expand_dims(np.expand_dims(np.arange(0,len(grayCodeImgs[pattType])), axis=1), axis=1).repeat(self.cSize[1], axis=2).repeat(self.cSize[0], axis=1)
+            # Създава степените, на които трябва да се повдигне съответното изображение. Първото е на степен 0, второто е на степен 1 и т.н.
+            # np.mgrid[:4,:3,:2] = [[[0,0,0],[0,0,0]],[[1,1,1],[1,1,1]],[[2,2,2],[2,2,2]],[[3,3,3],[3,3,3]]]
+            ind = np.mgrid[:len(grayCodeImgs[pattType]),:self.cSize[0],:self.cSize[1]][0]
             # (white[y,x]+black[y,x])/2 - средно аритметично на цвета на пиксела, когато е оцветен и когато не е.
-            msk = grayCodeImgs[pattType]>((white+black)/2) + 20 # макса дали съответния индекс трябва да се използва за повдигане с основа 2
-            for i in range(len(msk)):
-                msk[i] = cv.morphologyEx((255*msk[i]).astype(np.uint8), cv.MORPH_CLOSE,
-                                            np.ones((self.FILTER*2+1, self.FILTER*2+1)))
-
+            msk = grayCodeImgs[pattType]>((white+black)/2) + 25 # макса дали съответния индекс трябва да се използва за повдигане с основа 2
+            # msk = np.array([self.morphologyEx(255*m) for m in msk.astype(np.uint16)]).astype(np.bool_)# Засега е по-лошо. създава плавна граница на обекта и изчиства страничния бял шум от задния план
+            
             # Подвига се 2 на степен индексите и при умножаването по msk се взимат само стойностите с true. Резултатът се сумира по ос 0,
             # т.е. сумира се съответния пиксел за всички изображения в шаблона
             tempGrayCodeMap[pattType] = np.sum(np.power(2, ind)*msk, axis=0)
+
             # Аналогично за шаблоните като тук размерът се взима от pSize и сравнението е директно с 255 цвят на пиксела
-            indPatt = np.expand_dims(np.expand_dims(np.arange(0,len(patternImgs[pattType])), axis=1), axis=1).repeat(self.pSize[1], axis=2).repeat(self.pSize[0], axis=1)
+            indPatt = np.mgrid[:len(patternImgs[pattType]),:self.pSize[0],:self.pSize[1]][0]
             mskPatt = patternImgs[pattType] == 255
             tempPattGrayCodeMap[pattType] = np.sum(np.power(2, indPatt)*mskPatt, axis=0)
 
-            # #Не беше толкова бавна реализация, но горното работи впъти по-добре.
-            # for y in range(self.cSize[0]): #итериране по ширината на изображението
-            #     for x in range(self.cSize[1]): #итериране по височината на изображението
-            #         ind = np.arange(0,len(grayCodeImgs[pattType]))# степените за повдихане при основа 2.
-            #         msk = grayCodeImgs[pattType][:,y,x]>(white[y,x]+black[y,x])/2 # макса дали съответния индекс трябва да се използва за повдигане с основа 2
-            #         tempGrayCodeMap[pattType][y,x] = np.sum(np.power(2, ind)*msk)
-
-            # #!!! СТАРА И МНОГО БАВНА ВЕРСИЯ. МНОГО ПО-БЪРЗО Е КАТО НЕ СЕ ИТЕРИРАТ ВСИЧКИ ПИСКЕЛИ ЕДИН ПО ЕДИН ЗА ВСЯКО ОТДЕЛНО ИЗОБРАЖЕНИЕ
-            # for i in range(len(grayCodeImgs[pattType])): #итериране по изображенията
-            #     print('image: ', i)
-            #     for y in range(self.cSize[0]): #итериране по ширината на изображението
-            #         for x in range(self.cSize[1]): #итериране по височината на изображението
-            #             # ако пиксела е бял(по-голямо от средно аритметичното между черното и бялото), то се добавя 2^i към mapping-а в първата колона.
-            #             # (white[y,x]+black[y,x])/2 - средно аритметично на цвета на пиксела, когато е оцветен и когато не е.
-            #             if grayCodeImgs[pattType][i][y][x] > (white[y,x]+black[y,x])/2:
-            #                 tempGrayCodeMap[pattType][y,x] += pow(2,i)
-            #             # Проекторът е с по-малка резолюция от камерата и затова се проверява дали няма да се излезе от масива.
-            #             # ако пиксела е бял, то се добавя 2^i към mapping-а във вторака колона.
-            #             if y < self.pSize[0] and x < self.pSize[1] and patternImgs[pattType][i][y][x] == 255:
-            #                 tempPattGrayCodeMap[pattType][y,x] += pow(2,i)
-
+        # DEBUG
+        # [675:1030,745:1145]
         # np.savetxt('Img{0}.txt'.format(i), x, fmt='%i', delimiter='\t')
         # cv.imwrite('Img{0}.jpg'.format(i), img)
-        for cY in range(self.cSize[0]):
-            for cX in range(self.cSize[1]):
-                # Сборът на стойността в пискела и обратния(Inverse) шаблона трябва да е = 2^(броя шаблони)-1
-                # Аналогично за транспонираните шаблони
-                if (tempGrayCodeMap[Patterns.IMAGE_PATTERN][cY,cX] + tempGrayCodeMap[Patterns.INV_PATTERN][cY,cX] != pow(2,len(grayCodeImgs[pattType]))-1 or
-                    tempGrayCodeMap[Patterns.TRANS_PATTERN][cY,cX] + tempGrayCodeMap[Patterns.TRANS_INV_PATTERN][cY,cX] != pow(2,len(grayCodeImgs[pattType]))-1):
-                    nerr += 1
-                    continue
-                for pY in range(self.pSize[0]):
-                    for pX in range(self.pSize[1]):
-                        # Трябва стойността на пиксела от изображението да съответства на този на шаблона и аналогично да има съответствие при транспонирания шаблон.=.
-                        # Обратните(inverse) шаблони са само контролни и не е необходимо да се търси съвпадение при тях.
-                        if (tempGrayCodeMap[Patterns.IMAGE_PATTERN][cY,cX] == tempPattGrayCodeMap[Patterns.IMAGE_PATTERN][pY,pX] and
-                           tempGrayCodeMap[Patterns.TRANS_PATTERN][cY,cX] == tempPattGrayCodeMap[Patterns.TRANS_PATTERN][pY,pX]):
-                            dist = math.sqrt(pow(cY-pY,2) + pow(cX-pX,2))#разстоянието между точките в изборажението и шаблона
-                            # @TODO: Да се направи Lagrange Interpolation https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
-                            # За пискела не е намирано съвпадение или намереното разстояние е минимално
-                            if self.mask[cY, cX] == 0 or dist < self.grayCodeMap[cY, cX, 2]:
-                                self.grayCodeMap[cY, cX, :] = np.array([cY,cX,dist])#записва съответствята на координатите между снимките и шаблоните
-                                #мареика се като бяло, т.е. има съвпадение
-                                self.mask[cY, cX] = 255
-                                yerr += 1
 
-        print(yerr,nerr)#1 256 929-63 764/ 79 540-2 052 088
+        # Генериране на индекси на изображенията [[0,0],[0,1],[0,1],[1,0],[1,1],...]
+        indImg = np.mgrid[:tempGrayCodeMap[Patterns.IMAGE_PATTERN].shape[0],:tempGrayCodeMap[Patterns.IMAGE_PATTERN].shape[1]]
+        # Stack-ване на масивите на изображенията в едно общо със 6 стойности на ред - x,y, IMAGE_PATTERN value, INV_PATTERN value, ...
+        stackImgs = np.dstack((indImg[0],indImg[1],
+                        tempGrayCodeMap[Patterns.IMAGE_PATTERN],tempGrayCodeMap[Patterns.INV_PATTERN],
+                        tempGrayCodeMap[Patterns.TRANS_PATTERN],tempGrayCodeMap[Patterns.TRANS_INV_PATTERN]))
+        # Филтриране - Сборът на стойността в пискела(Image) и обратния(Inverse) шаблона трябва да е = 2^(броя шаблони)-1
+        # Аналогичното важи и за транспонираните шаблони. Използва се оператор умножаване <*>, защото дава грешка при използването на <and>
+        stackImgs = stackImgs[((stackImgs[:,:,2] + stackImgs[:,:,3] == pow(2,len(grayCodeImgs[Patterns.IMAGE_PATTERN]))-1) *
+            (stackImgs[:,:,4] + stackImgs[:,:,5]  == pow(2,len(grayCodeImgs[Patterns.IMAGE_PATTERN]))-1)),:]#Някак от 3D става 2D масив, но точно това ми трябва
+
+        # Генериране на индекси на шаблоните [[0,0],[0,1],[0,1],[1,0],[1,1],...]
+        indPatt = np.mgrid[:tempPattGrayCodeMap[Patterns.IMAGE_PATTERN].shape[0],:tempPattGrayCodeMap[Patterns.IMAGE_PATTERN].shape[1]]
+        # Stack-ване на масивите на шаблоните в едно общо със 6 стойности на ред - x,y, IMAGE_PATTERN value, INV_PATTERN value, ...
+        stackPatts = np.dstack((indPatt[0],indPatt[1],
+                tempPattGrayCodeMap[Patterns.IMAGE_PATTERN],tempPattGrayCodeMap[Patterns.INV_PATTERN],
+                tempPattGrayCodeMap[Patterns.TRANS_PATTERN],tempPattGrayCodeMap[Patterns.TRANS_INV_PATTERN]))
+        stackPatts = stackPatts.reshape(stackPatts.shape[0]*stackPatts.shape[1],stackPatts.shape[2]) # Преформатиране на масива в редове, т.е. (cSize[0]*cSize[1],6)
+
+        #Неуспешен опит да се направи декартово произведение на изображенията и шаблоните. Ако се намери начин, то долното въртене на цикли ще стане бързо и на един ред
+        # mapImgsPatts = np.array([[x0, y0] for x0 in reshapeStackImgs for y0 in reshapeStackPatts])
+        # mapImgsPatts = np.array(list(itertools.product(*[stackImgs,stackPatts])))
+
+        for i,pix in enumerate(stackImgs):
+            for patPix in stackPatts[(pix[[2,4]]==stackPatts[:,[2,4]]).all(axis=1)]:
+                if (pix[2] == patPix[2] and pix[4] == patPix[4]):
+                    dist = math.sqrt(pow(pix[0]-patPix[0],2) + pow(pix[1]-patPix[1],2))#разстоянието между точките в изборажението и шаблона
+                    # За пискела не е намирано съвпадение или намереното разстояние е минимално
+                    if self.mask[int(pix[0]), int(pix[1])] == 0 or dist < self.grayCodeMap[int(pix[0]), int(pix[1]), 2]:
+                        self.grayCodeMap[int(pix[0]), int(pix[1]), :] = np.array([pix[0], pix[1],dist])#записва съответствята на координатите между снимките и шаблоните
+                        #маркира се като бяло, т.е. има съвпадение
+                        self.mask[int(pix[0]), int(pix[1])] = 255
+                        yerr += 1
+
+        print(yerr)#1 256 929/117 821
+        cv.imwrite('Res{0}.jpg'.format(scan_no), self.grayCodeMap[:,:,2])
 
     # smoothing filter
+    # Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
     def filterGrayCode(self):
-        #Трансгормация Dilation(създава плавна граница на обекта) последвана от Erosion(изчиства страничния бял шум от задния план).
-        #Използва се за премахване на малки черни дупки в предния план.
-        ext_mask = cv.morphologyEx(self.mask, cv.MORPH_CLOSE,
-                                    np.ones((self.FILTER*2+1, self.FILTER*2+1)))#Прилага се филтър 3x3
+        ext_mask = self.morphologyEx(self.mask) # създава плавна граница на обекта и изчиства страничния бял шум от задния план
+
         for y in range(self.cSize[0]):
             for x in range(self.cSize[1]):
                 if self.mask[y, x] == 0 and ext_mask[y, x] != 0:
@@ -234,12 +226,23 @@ class Reconstruct3D:
 
             self.mask = ext_mask
 
-    def prespectiveTransform(self,q_matrix):
+    #Трансгормация Dilation(създава плавна граница на обекта) последвана от Erosion(изчиства страничния бял шум от задния план).
+    #Използва се за премахване на малки черни дупки в предния план.
+    def morphologyEx(self, mask):
+        return cv.morphologyEx(mask, cv.MORPH_CLOSE,
+                                    np.ones((self.FILTER*2+1, self.FILTER*2+1)))#Прилага се филтър 3x3
+
+    """
+     Генeрира облака от точки от матрицата на Q и мапинга на разликата между пикселите в едното и другото изображение (x-x')
+    """
+    def genPointCloud(self,q_matrix):
         self.pointCloud = cv.perspectiveTransform(self.grayCodeMap, q_matrix) # за по-редки съвпадащи точки
         # self.pointCloud = cv.reprojectImageTo3D(???, q_matrix) # за по-гъсти съвпадащи точки
 
-    def savePointCloud(self,dir):
-        with open(dir + '/'+self.FILE_NAME,'w') as fid:
+    # Запазване на облака от точки като xyzrbg файл
+    def savePointCloud(self,dir, scan_no):
+        fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no)
+        with open(fileFullName,'w') as fid:
             fid.write('ply\n')
             fid.write('format ascii 1.0\n')
             fid.write('element vertex %d\n'%np.count_nonzero(self.mask))
@@ -254,9 +257,24 @@ class Reconstruct3D:
             # Write 3D points to .ply file
             for y in range(0, self.cSize[0]):
               for x in range(0, self.cSize[1]):
-                  # @TODO: Има разминаване между броя на редовете в маската и тези от лога.
-                  # Ако долу филтрирам допълнително pointCloud!=[0,0,0] се получава бройката от лога. Горе трябва да се разследва!
-                  if self.mask[y][x] != 0:#
+                  if self.mask[y][x] != 0:#Записват се само редовете записани като валидни
                       fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.grayCodeMap[y][x][2],#self.pointCloud[y][x][2],#
-                                self.colorImg[y][x][2],self.colorImg[y][x][1],self.colorImg[y][x][0]))#150,0,0))#
-        print(self.FILE_NAME)
+                                self.colorImg[y][x][2],self.colorImg[y][x][1],self.colorImg[y][x][0]))#150,0,0))# .astype(np.float) / 255.0
+        print(fileFullName)
+
+    # Зареждане на облака от точки от xyzrbg файл
+    def loadPointCloud(self, dir, scan_no):
+        fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no)
+        pcd = o3d.io.read_point_cloud(fileFullName)
+        downpcd = pcd.voxel_down_sample(voxel_size=0.05) # down sample на входните точки, за да не са твърде много и да се обработва по-лесно.
+        print(pcd)
+        # За тест може да се визуализира пълния или down sample облак от точки
+        self.visualizationPointCloud(pcd)#downpcd # Визуализиране на облака от точки
+
+    # Визуализиране на облака от точки
+    def visualizationPointCloud(self, pcd):
+        o3d.visualization.draw_geometries([pcd],
+                                          zoom=0.3412,
+                                          front=[0.4257, -0.2125, -0.8795],
+                                          lookat=[2.6172, 2.0475, 1.532],
+                                          up=[-0.0694, -0.9768, 0.2024])

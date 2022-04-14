@@ -8,7 +8,7 @@ import cv2 as cv
 class Projector:
 
     media_player = None
-    TMP_PATTERN_FILE_NAME = "/tmpPattern.jpg"
+    TMP_PATTERN_FILE_NAME = "/tmpPattern.jpg" # Име на файл, в който се записва изображението преди проектиране, защото VLC работи само с директория на файл за прожектиране.
     CALIBRATION_DIR = "./Projector_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
     CHESS_BOARD_PATTERN = "/chessboard.jpg" # Файл с резултата от калибрирането
 
@@ -26,7 +26,7 @@ class Projector:
 
     # Задава изображение за показване на проектора
     def playImage(self, image):
-        cv.imwrite(self.CALIBRATION_DIR + self.TMP_PATTERN_FILE_NAME, image)
+        cv.imwrite(self.CALIBRATION_DIR + self.TMP_PATTERN_FILE_NAME, image) # Изображението за прожектиране се запазва във файл, защото VLC работи само с директория на файл за прожектиране.
         self.playImageByPath(self.CALIBRATION_DIR + self.TMP_PATTERN_FILE_NAME)
 
     # Задава изображение по определ PATH за показване на проектора

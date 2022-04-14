@@ -7,6 +7,7 @@ import cv2 as cv
 """
 class Patterns:
 
+    # Кодовете на шаблоните за генериране
     WHITE = 0
     BLACK = 1
     OPENCV_GRAY_CODE = 2
@@ -17,6 +18,7 @@ class Patterns:
     STRIPE = 7
     CHESS_BOARD = 8
 
+    # Имената на шаблоните, които се използват в името на заснетите изображения
     WHITE_PATTERN = "White"
     BLACK_PATTERN = "Black"
     GRAY_CODE_PATTERN = "Gray"
@@ -28,6 +30,7 @@ class Patterns:
     CHESS_BOARD_PATTERN = "Chessboard"
 
     # Генериране на шаблон според подадения код
+    # chessboardSize - размер на шахматна дъска(бр. пресичания на черен и черен квадрат по диагонал). Използва се, когато patternCode = self.CHESS_BOARD
     def genetare(self, patternCode, pSize, chessboardSize=None):
         if patternCode == self.WHITE:
             return self.white(pSize)
@@ -142,7 +145,7 @@ class Patterns:
         return self.multiply(imgMatr,imgMatrTrans,pSize)
 
     """
-        Шахматна дъска за калибриране на проектора
+        Шахматна дъска за калибриране на проектора. Генерира вертикален и хоризонтален шаблон.
         pSize - размери на проекториа
         chessboardSize - бр. пресичания на черен и черен квадрат по диагонал
     """
@@ -150,19 +153,20 @@ class Patterns:
         chW,chH = chessboardSize
         imgMatr = self.chessboard(pSize,(chW,chH))
         imgMatrTrans = self.chessboard(pSize,(chH,chW))
-        
+
         return {self.CHESS_BOARD_PATTERN: np.array([imgMatr[0],imgMatrTrans[0]])}
 
 
     """
-        Шахматна дъска за калибриране на проектора
+        Генериране на шахматен шаблон по зададените размери на изображението и дъската.
+        Използва се от chessboardAll, за да се генерират шаблони с различна ориентация
         pSize - размери на проекториа
         chessboardSize - бр. пресичания на черен и черен квадрат по диагонал
     """
     def chessboard(self, pSize, chessboardSize):
         height, width = pSize
         rowsCnt,colsCnt = (chessboardSize[0]+1,chessboardSize[1]+1)#бр. квадрати по ширина и дължина, за да удовлетовори chessboardSize
-        squareSize = int(min(width/rowsCnt, height/colsCnt))-10
+        squareSize = int(min(width/rowsCnt, height/colsCnt))-10 # размер на квдрат в пискели
         rightPad,bottomPad = (width-rowsCnt*squareSize,height-colsCnt*squareSize) # оставащо празно пространсвто в дясно и долу
 
         # (*) (x/squareSize)%2 - Редуват се черно/бяло през squareSize по x
@@ -205,9 +209,9 @@ class Patterns:
     # обръщане на черно-бял шаблон. Черното става бяла и обратното
     def invert(self, imlist):
         # imlist съдържа стойности 0 и 255 => всяко 0 става 255-0=255 и всяко 255 става 255-255=0
-        return [255-img for img in imlist]
+        return np.array([255-img for img in imlist])
 
     # Транспониране на шаблоните(от вертикални в хоризонстални раета), за да се засеме по y остта
     def transpose(self, pattern):
         # img.T транспонира матрицата
-        return [ img.T for img in pattern]
+        return np.array([ img.T for img in pattern])

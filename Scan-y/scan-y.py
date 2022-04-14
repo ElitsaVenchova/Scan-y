@@ -2,17 +2,16 @@
 Structure light 3D scanner
 
 @TODO:
-    * Да кача от телефона новите изображения в /setup_photos
+    * Reconstruct3D.filterGrayCode - не работи добре, да се оправи
+    * Да се премисли определянето на dist. Шалбонът трябва да се центрира и така да се мери разсторния. Сега се получава увеличаване от ляво надясно.
+    * Да се тества сканирането със delay(1), защото в момента е 2 секунди и общото време е 720*2=24 мин.
     * За получаване на минимална разлика между пиксели трябва да се направи Lagrange Interpolation
         * https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
-    * Reconstruct3D.readImages - в момента се чете забито сканирен "70". Трябва да се направи на параметър.
-    * Да се оправи проблема с разликата между броя записи в Mask и реалните валидни записи при запазването на ply файла.
     * Да се види реализацията на http://mesh.brown.edu/byo3d/source.html
     * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
     * Web app
         * да се направят фукции връщане point cloud, mesh - файловеи формати .ply, .stl, .obj. Кухи, ако не се направи имплементация
         * връща изображенията в архив и после погат да се пуснат в MeshLap.
-    * Коментиране на кода
     * Тестът за точност може да бъде между резултата в MeshLap и сканиране на ДиТра
 """
 import cv2 as cv
@@ -20,26 +19,29 @@ import numpy as np
 import structuredlight as sl
 import math
 import argparse
+import time
 
-def scan(args):
+def scan(args): # Сканиране
+    start = time.time()
     scanY.scan(args.pattern)
+    print('exec time: ', time.time()-start)
 
-def stereoCalib(args):
+def stereoCalib(args): # Стерео калибриране
     scanY.stereoCalibrate(args.chessboardSize)
 
-def cCalib(args):
+def cCalib(args): # Калибриране на камерата
     scanY.cameraCalibrate((args.pHeight,args.pWidth),args.chessboardSize, args.chessboardSize, args.calib_type, args.calibImgCnt)
 
-def pCalib(args):
+def pCalib(args): # Калибриране на проектора
     scanY.projectorCalibrate((args.pHeight,args.pWidth),args.chessboardSize, args.calibImgCnt)
 
 def main():
     print("main")
-    
+
     # patternsArr = scanY.patterns.genetare(3,(360,615),(6,8)) # шаблоните
     # for key, pattr in patternsArr.items():
     #     for i,img in enumerate(pattr):
-    #         # img = scanY.cameraPi.undistortImage(img,scanY.cameraPi.stereoCalibrationRes["cameraMatrix"], 
+    #         # img = scanY.cameraPi.undistortImage(img,scanY.cameraPi.stereoCalibrationRes["cameraMatrix"],
     #         #                           scanY.cameraPi.stereoCalibrationRes["cameraDistortion"], None,
     #         #                           scanY.cameraPi.stereoCalibrationRes["cRoi"])
     #         print(img.shape)
@@ -49,7 +51,7 @@ def main():
 
 if __name__=="__main__":
     scanY = sl.StructuredLight()
-      
+
     parser = argparse.ArgumentParser(
         description='Scan-y 3D structured light scanner\n',
         formatter_class=argparse.RawTextHelpFormatter)

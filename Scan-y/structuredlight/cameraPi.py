@@ -39,6 +39,9 @@ class CameraPi:
             camera.stop_preview()
         return imageFullName
 
+    """
+        Връщане на резултат от калибрирането според подадената директория, в която ще се използва
+    """
     def getUndistortCalibrationRes(self, dir):
         calibRes = None
         # Ако е калибриране на прожектора, то се прилага калибрирането на камерата
@@ -49,7 +52,7 @@ class CameraPi:
                 "newCameraMatrix": self.cCalibrationRes["newCameraMatrix"],
                 "roi": self.cCalibrationRes["roi"]
                 }
-        # Ако не е калибриране на камерата или стерео, то се опитва да се приложи резултата от стерео к
+        # Ако не е калибриране на камерата или стерео, то се опитва да се приложи резултата от стерео калибрирането
         elif (not dir.startswith(self.CALIBRATION_DIR) and
                 not dir.startswith(self.STEREO_CALIBRATION_DIR)):
             # При стерео калибрацията няма newCameraMatrix и се подава None
@@ -62,14 +65,13 @@ class CameraPi:
                 }
         return calibRes
 
-    # Зарежда изображенията и "изправя изображението", ако е приложимо
+    # Зарежда и "изправя" изображението, ако е приложимо
     def loadImage(self, fname,flag=cv.IMREAD_COLOR):
         img = cv.imread(fname, flag)
-        matrix, distortion, newCameraMatrix, roi = (None,None,None,None)
         calibRes = self.getUndistortCalibrationRes(fname)
-            
-        if calibRes != None:
-            img = self.undistortImage(img,calibRes)
+
+        # if calibRes != None:
+        #     img = self.undistortImage(img,calibRes)
         return img
 
     """
@@ -81,13 +83,18 @@ class CameraPi:
     """
     def stereoCalibrate(self, chessboardSize, projCalibResults):
         camCalibResults = self.cCalibrationRes
-        objpoints, camImgpoints, projImgpoints = self.stereoFindChessboardCorners(self.STEREO_CALIBRATION_DIR, chessboardSize)
+        objpoints, camImgpoints, projImgpoints = self.stereoFindChessboardCorners(self.STEREO_CALIBRATION_DIR, chessboardSize)# Точките на дъската, в изображението на камерата и в проектора.
 
-        # cv.CALIB_FIX_INTRINSIC - изчислява само r_matrix, t_vecs,  essentialMatrix, fundamentalMatrix
+        # cv.CALIB_USE_INTRINSIC_GUESS - преизчислява cameraMatrix, cameraDistortion, projectorMatrix, projectorDistortion
+        # r_matrix, t_vecs - rotation и transition между камерата и проектораl. Това основно се използва за
+        # essentialMatrix, fundamentalMatrix - 3x3 матрици. Свързват съответните точки в стеро изображение. essentialMatrix може да се разглежда като предшественик на fundamentalMatrix
         ret, cameraMatrix, cameraDistortion, projectorMatrix, projectorDistortion, r_matrix, t_vecs,  essentialMatrix, fundamentalMatrix = \
             cv.stereoCalibrate(objpoints, camImgpoints, projImgpoints, camCalibResults["matrix"], camCalibResults["distortion"],
                         projCalibResults["matrix"], projCalibResults["distortion"], tuple(camCalibResults["shape"]),flags = cv.CALIB_USE_INTRINSIC_GUESS)
 
+        # camRectTransMat, projRectTransMat, camProjectionMatrix, projProjectionMatrix -
+        # disparityToDepthMatrix - 4x4 матрица трансформираща преспективата(Q) за преобразуване на пиксели disparity в съответните [x, y, z]
+        # cRoi, pRoi - използва се изрязване само да валидната област на изображението след калибриране, но не работи вярно и дава координати (0,0),(0,0), т.е. нищо не е валидно.
         camRectTransMat, projRectTransMat, camProjectionMatrix, projProjectionMatrix, disparityToDepthMatrix, cRoi, pRoi = \
             cv.stereoRectify(cameraMatrix, cameraDistortion, projectorMatrix, projectorDistortion, tuple(camCalibResults["shape"]), r_matrix, t_vecs)
 
@@ -103,8 +110,6 @@ class CameraPi:
             "pRoi": pRoi,
             "r_matrix": r_matrix,
             "t_vecs": t_vecs,
-            "essentialMatrix": essentialMatrix,
-            "fundamentalMatrix": fundamentalMatrix,
             "disparityToDepthMatrix": disparityToDepthMatrix
             }
         self.writeStereoCalibrationResult(self.STEREO_CALIBRATION_DIR,stereoCalibrationRes)
@@ -212,7 +217,6 @@ class CameraPi:
         return cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None, 0)
 
     # Стерео намиране на ъглите на квадратите
-
     def stereoFindChessboardCorners(self, stereoCalibrationDir, chessboardSize):
         # !!!ВАЖНО: горе с calibrate, има описания какво означават тези редове
         objp = np.zeros((chessboardSize[0]*chessboardSize[1],3), np.float32)
@@ -222,7 +226,7 @@ class CameraPi:
 
         # Взимане на imgpoints за камерата
         fname = natsorted(glob.glob('{0}/{1}'.format(stereoCalibrationDir,'image*.jpg')))[0]
-        img = self.loadImage(fname, cv.IMREAD_GRAYSCALE)
+        img = self.loadImage(fname)
         ret, corners = cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
         if ret == True:
             objpoints.append(objp)
@@ -232,9 +236,8 @@ class CameraPi:
         camImgpoints = imgpoints
 
         # Взимане на imgpoints за проектора. Тук шаблона се представя като това, което е заснето от камерата
-        # Тук не трябва да се прилага матрицата на камерата
-        img = cv.imread(Projector.CALIBRATION_DIR + Projector.TMP_PATTERN_FILE_NAME, cv.IMREAD_GRAYSCALE)
-        img = ndimage.rotate(img, 90)
+        img = self.loadImage(Projector.CALIBRATION_DIR + Projector.TMP_PATTERN_FILE_NAME)
+        img = ndimage.rotate(img, 90) # Завъртане, защото проектора го използва вертикално, за да го покаже хоризонтално
         ret, corners = cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
         if ret == True:
             objpoints.append(objp)
@@ -249,17 +252,16 @@ class CameraPi:
     def undistortImage(self, img, calibrationRes, calibrationDir=None):
         # Премахване на изкривяването
         dst = cv.undistort(img, calibrationRes["matrix"], calibrationRes["distortion"], None, calibrationRes["newCameraMatrix"])
-        
+
         # СПИРА СЕ ИЗРЯЗВАНЕТО ПО ROI, ЗАЩОТО ВИНАГИ ТРЯБВА ПЪЛНОТО ИЗОБРАЖЕНИЕ
         # СЪЩО stereoRectify ВРЪЩА ВИНАГИ 0,0,0,0 И ТРЯБВА ДА СЕ ОПРАВИ, АКО ЩЕ СЕ ПРИЛАГА ИЗРЯЗВАНЕ НА НЕВАЛИДНИ ПИКСЕЛИ
         # Изрязване на изображението. Всяка стойност е масив, затова с flatten се преобразува от 2D в 1D масив
         # x,y,w,h = calibrationRes["roi"].flatten().astype(int)
         # dst = dst[y:y+h, x:x+w]
-        
+
         if calibrationDir != None:
             cv.imwrite(calibrationDir + self.CALIBRATION_RES_IMAGE, dst)
             print("Done!")
-        print(dst.shape)
         return dst
 
     """
@@ -294,8 +296,6 @@ class CameraPi:
         fs.write('pRoi', stereoCalibrationRes["pRoi"])
         fs.write('r_matrix', stereoCalibrationRes["r_matrix"])
         fs.write('t_vecs', stereoCalibrationRes["t_vecs"])
-        fs.write('essentialMatrix', stereoCalibrationRes["essentialMatrix"])
-        fs.write('fundamentalMatrix', stereoCalibrationRes["fundamentalMatrix"])
         fs.write('disparityToDepthMatrix', stereoCalibrationRes["disparityToDepthMatrix"])
         fs.release()
 
@@ -344,8 +344,6 @@ class CameraPi:
                 "pRoi" : fs.getNode('pRoi').mat(),
                 "r_matrix" : fs.getNode('r_matrix').mat(),
                 "t_vecs" : fs.getNode('t_vecs').mat(),
-                "essentialMatrix" : fs.getNode('essentialMatrix').mat(),
-                "fundamentalMatrix" : fs.getNode('fundamentalMatrix').mat(),
                 "disparityToDepthMatrix" : fs.getNode('disparityToDepthMatrix').mat()
                 }
         return stereoCalibrationRes
