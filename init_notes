@@ -24,7 +24,7 @@ pip3 install python-vlc                         -- vlc
 pip install natsort				-- python библиотека за инсталиране "естествено сортиране"
 pip install open3d
 --
-sudo nano /home/pi/.config/lxpanel/LXDE-pi/panels/panel         --add bg in keyboad. Променя се почти накрая на файла:ToggleOpt=grp:ctrl_shift_toggle и LayoutsList=us,bg(phonetic). Последното все още не знам как да задам phonetic.
+sudo nano /home/pi/.config/lxpanel/LXDE-pi/panels/panel         --add bg in keyboad. Променя се почти накрая на файла:ToggleOpt=grp:ctrl_shift_toggle и LayoutsList=en,bg  VariansList=,phonetic. Последното все още не знам как да задам phonetic.
 ----------------------------------------------------	
 git add <filename> 	       --Add one or more files to staging (index)
 git add *		       --Add one or more files to staging (index)
