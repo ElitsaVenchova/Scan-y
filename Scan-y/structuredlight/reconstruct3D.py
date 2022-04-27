@@ -35,7 +35,11 @@ class Reconstruct3D:
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.float32)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.pointCloud = np.zeros(self.cSize, np.float32) # крайния резултат. Облак от точки.
 
-    #
+        # Коефицинти с разликата спрямо по-голямото изображение.
+        # Използва се при изичсляването на разстоянието, за да може да е пропорционално
+        self.cCoef = (max(self.pSize[0]/self.cSize[0],1), max(self.pSize[1]/self.cSize[1],1))
+        self.pCoef = (max(self.cSize[0]/self.pSize[0],1), max(self.cSize[1]/self.pSize[1],1))
+
     """
         Основната функция за реконструкция.
         Обхождат се сканиранията на различните гледни точки, прави се Point Cloud за тях,
@@ -44,16 +48,17 @@ class Reconstruct3D:
     """
     def reconstruct(self, dir, patternCode, stepsCnt, stepSize):
 
-        for scan_no in range(0, stepsCnt, stepSize):
-            self.manualMapGrayCode(dir, patternCode, scan_no) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
-            # self.autoMapGrayCode(dir) # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
+        for scan_no in [10]:#range(0, stepsCnt, stepSize):#
+            self.__init__(self.cameraPi)#Класът се инициализира отново, за да се изчистят вече запазените данни от предходното сканиране
+            # self.manualMapGrayCode(dir, patternCode, scan_no) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
+            # Тези долу са само резервни варианти, които не работят или не са оптимални, но могат да се използват в бъдеще
+            # # # self.autoMapGrayCode(dir) # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
+            # # #
+            # # # self.filterGrayCode() # smoothing filter. Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
+            # # # self.genPointCloud(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"]) # преобразуване на disparity в дълбочина.
 
-            # self.filterGrayCode() # smoothing filter. Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
-            # self.genPointCloud(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"]) # преобразуване на disparity в дълбочина.
-
-            self.savePointCloud(dir, scan_no) # Запазване на облака от точки като xyzrbg файл
-            # self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
-
+            # self.savePointCloud(dir, scan_no) # Запазване на облака от точки като xyzrbg файл
+            self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
 
     #Прочита изображенията за определен шаблон
     def readImages(self, dir, patternCode,  readType, scan_no = '', img_no='?'):
@@ -104,7 +109,7 @@ class Reconstruct3D:
     def manualMapGrayCode(self, dir, patternCode, scan_no):
         self.colorImg = self.readImages(dir, Patterns.INV_PATTERN, self.COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
 
-        print('Pattern code: ', patternCode, '; scan_no: ', scan_no)
+        print('Pattern code: ', patternCode, '/ scan_no: ', scan_no)
         patternImgs = Patterns().genetare(patternCode, self.pSize) # Шаблоните
 
         # Съдържа изображенията в 4-те различни варианта
@@ -140,9 +145,9 @@ class Reconstruct3D:
             # np.mgrid[:4,:3,:2] = [[[0,0,0],[0,0,0]],[[1,1,1],[1,1,1]],[[2,2,2],[2,2,2]],[[3,3,3],[3,3,3]]]
             ind = np.mgrid[:len(grayCodeImgs[pattType]),:self.cSize[0],:self.cSize[1]][0]
             # (white[y,x]+black[y,x])/2 - средно аритметично на цвета на пиксела, когато е оцветен и когато не е.
-            msk = grayCodeImgs[pattType]>((white+black)/2) + 25 # макса дали съответния индекс трябва да се използва за повдигане с основа 2
+            msk = grayCodeImgs[pattType]>((white+black)/2) + 25 #white-30# макса дали съответния индекс трябва да се използва за повдигане с основа 2
             # msk = np.array([self.morphologyEx(255*m) for m in msk.astype(np.uint16)]).astype(np.bool_)# Засега е по-лошо. създава плавна граница на обекта и изчиства страничния бял шум от задния план
-            
+
             # Подвига се 2 на степен индексите и при умножаването по msk се взимат само стойностите с true. Резултатът се сумира по ос 0,
             # т.е. сумира се съответния пиксел за всички изображения в шаблона
             tempGrayCodeMap[pattType] = np.sum(np.power(2, ind)*msk, axis=0)
@@ -154,8 +159,8 @@ class Reconstruct3D:
 
         # DEBUG
         # [675:1030,745:1145]
-        # np.savetxt('Img{0}.txt'.format(i), x, fmt='%i', delimiter='\t')
-        # cv.imwrite('Img{0}.jpg'.format(i), img)
+        # np.savetxt('Img{0}.txt'.format(scan_no), x, fmt='%i', delimiter='\t')
+        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,'txt'), img)
 
         # Генериране на индекси на изображенията [[0,0],[0,1],[0,1],[1,0],[1,1],...]
         indImg = np.mgrid[:tempGrayCodeMap[Patterns.IMAGE_PATTERN].shape[0],:tempGrayCodeMap[Patterns.IMAGE_PATTERN].shape[1]]
@@ -177,13 +182,20 @@ class Reconstruct3D:
         stackPatts = stackPatts.reshape(stackPatts.shape[0]*stackPatts.shape[1],stackPatts.shape[2]) # Преформатиране на масива в редове, т.е. (cSize[0]*cSize[1],6)
 
         #Неуспешен опит да се направи декартово произведение на изображенията и шаблоните. Ако се намери начин, то долното въртене на цикли ще стане бързо и на един ред
-        # mapImgsPatts = np.array([[x0, y0] for x0 in reshapeStackImgs for y0 in reshapeStackPatts])
-        # mapImgsPatts = np.array(list(itertools.product(*[stackImgs,stackPatts])))
+        # # mapImgsPatts = np.array([[x0, y0] for x0 in reshapeStackImgs for y0 in reshapeStackPatts])
+        # # mapImgsPatts = np.array(list(itertools.product(*[stackImgs,stackPatts])))
 
         for i,pix in enumerate(stackImgs):
             for patPix in stackPatts[(pix[[2,4]]==stackPatts[:,[2,4]]).all(axis=1)]:
                 if (pix[2] == patPix[2] and pix[4] == patPix[4]):
-                    dist = math.sqrt(pow(pix[0]-patPix[0],2) + pow(pix[1]-patPix[1],2))#разстоянието между точките в изборажението и шаблона
+
+                    #разстоянието между точките в изборажението и шаблона
+                    #добавя се +1 на всички координати, за да може при умножението по коефициентите за разликата на изображенияна,
+                    #да се получи вярна стойност. Иначе за y=1 => 1*1.2 = 1.2, а това реално е втория пиксел и трябва да бъде 2*1.2 = 2.4
+                    dist = math.sqrt(pow((pix[0]+1)-(patPix[0]+1),2)
+                            + pow((pix[1]+1)-(patPix[1]+1),2))
+                    # math.sqrt(pow((pix[0]+1)*self.cCoef[0]-(patPix[0]+1)*self.pCoef[0],2)
+                    #         + pow((pix[1]+1)*self.cCoef[1]-(patPix[1]+1)*self.pCoef[1],2))
                     # За пискела не е намирано съвпадение или намереното разстояние е минимално
                     if self.mask[int(pix[0]), int(pix[1])] == 0 or dist < self.grayCodeMap[int(pix[0]), int(pix[1]), 2]:
                         self.grayCodeMap[int(pix[0]), int(pix[1]), :] = np.array([pix[0], pix[1],dist])#записва съответствята на координатите между снимките и шаблоните
@@ -192,7 +204,7 @@ class Reconstruct3D:
                         yerr += 1
 
         print(yerr)#1 256 929/117 821
-        cv.imwrite('Res{0}.jpg'.format(scan_no), self.grayCodeMap[:,:,2])
+        cv.imwrite('Img{0}{1}.jpg'.format(scan_no,'Mask'), self.mask)
 
     # smoothing filter
     # Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
@@ -245,7 +257,7 @@ class Reconstruct3D:
         with open(fileFullName,'w') as fid:
             fid.write('ply\n')
             fid.write('format ascii 1.0\n')
-            fid.write('element vertex %d\n'%np.count_nonzero(self.mask))
+            fid.write('element vertex %d\n'%np.count_nonzero(self.mask))#[675:1030,745:1145]
             fid.write('property float x\n')
             fid.write('property float y\n')
             fid.write('property float z\n')
@@ -257,24 +269,32 @@ class Reconstruct3D:
             # Write 3D points to .ply file
             for y in range(0, self.cSize[0]):
               for x in range(0, self.cSize[1]):
-                  if self.mask[y][x] != 0:#Записват се само редовете записани като валидни
+                  if self.mask[y][x] != 0 :#and y>=675 and y<=1030 and x>=745 and x<=1145#Записват се само редовете записани като валидни
                       fid.write("{0} {1} {2} {3} {4} {5}\n".format(x,y,self.grayCodeMap[y][x][2],#self.pointCloud[y][x][2],#
                                 self.colorImg[y][x][2],self.colorImg[y][x][1],self.colorImg[y][x][0]))#150,0,0))# .astype(np.float) / 255.0
         print(fileFullName)
 
     # Зареждане на облака от точки от xyzrbg файл
     def loadPointCloud(self, dir, scan_no):
-        fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no)
-        pcd = o3d.io.read_point_cloud(fileFullName)
-        downpcd = pcd.voxel_down_sample(voxel_size=0.05) # down sample на входните точки, за да не са твърде много и да се обработва по-лесно.
-        print(pcd)
+        res = np.array([])
+        for scan_no2 in [0,30]:#range(0, 200, 10):#range(0, 50, 10):#
+            fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no2)
+            pcd = o3d.io.read_point_cloud(fileFullName)
+            points = np.asarray(pcd.points)
+            pcd = pcd.select_by_index(np.where(points[:,1] > 600)[0])#700
+            points = np.asarray(pcd.points)
+            pcd = pcd.select_by_index(np.where(points[:,1] < 1000)[0])
+            points = np.asarray(pcd.points)
+            pcd = pcd.select_by_index(np.where(points[:,2] < 1000)[0])
+            # downpcd = pcd.voxel_down_sample(voxel_size=0.05) # down sample на входните точки, за да не са твърде много и да се обработва по-лесно.
+            R = pcd.get_rotation_matrix_from_xyz((0, -np.deg2rad(1.8*scan_no2), 0))
+            pcd = pcd.rotate(R, center=(885,1000,295))
+# 885,1000,295
+            res = np.append(res,pcd)
+
         # За тест може да се визуализира пълния или down sample облак от точки
-        self.visualizationPointCloud(pcd)#downpcd # Визуализиране на облака от точки
+        self.visualizationPointCloud(res)#downpcd # Визуализиране на облака от точки
 
     # Визуализиране на облака от точки
     def visualizationPointCloud(self, pcd):
-        o3d.visualization.draw_geometries([pcd],
-                                          zoom=0.3412,
-                                          front=[0.4257, -0.2125, -0.8795],
-                                          lookat=[2.6172, 2.0475, 1.532],
-                                          up=[-0.0694, -0.9768, 0.2024])
+        o3d.visualization.draw_geometries(pcd)
