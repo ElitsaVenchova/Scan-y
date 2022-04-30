@@ -72,12 +72,12 @@ if __name__=="__main__":
     #Camera calibration
     parser_cCalib = subparsers.add_parser(
         'cCalib', help='Camera calibration')
-    parser_cCalib.add_argument('calib_type', type=str, nargs='?',default = 'A',help='Calibration type of camera: A(default)-automatic, M-manual')
+    parser_cCalib.add_argument('calib_type', type=str, nargs='?',choices=list(['A','M']),default = 'A',help='Calibration type of camera: A(default)-automatic, M-manual')
     parser_cCalib.add_argument('pHeight', type=int, nargs='?',default = 360, help='Projector height. Default: 360')
     parser_cCalib.add_argument('pWidth', type=int, nargs='?',default = 615, help='Projector width. Default: 615')
     parser_cCalib.add_argument('chessboardSize', type=int, nargs='?',default = (6,8), help='Chessboard size. Default: (6,8)')
     parser_cCalib.add_argument('chessBlockSize', type=int, nargs='?',default = 16, help='Chessboard block size. Default: 16mm')
-    parser_cCalib.add_argument('calibImgCnt', type=int, nargs='?',default = 20, help='Count of calibratin images. Default: 20')
+    parser_cCalib.add_argument('calibImgCnt', type=int, nargs='?',default = 20, help='Count of calibration images. Default: 20')
     parser_cCalib.set_defaults(func=cCalib)
 
     #Projector calibration
