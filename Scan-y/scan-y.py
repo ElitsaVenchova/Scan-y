@@ -2,10 +2,11 @@
 Structure light 3D scanner
 
 @TODO:
+    * Да се създаде нов клас processing3D, който да съдържа методите за записване и зареждане на 3D данните. Може би ще съдържа и генерирането на Mesh
+    * функцията в reconstruct3D за четене да изображенията да се преместви в cameraPi
     * Reconstruct3D.filterGrayCode - не работи добре, да се оправи
     * За получаване на минимална разлика между пиксели трябва да се направи Lagrange Interpolation
         * https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
-    * Има алгоритъм/ми за напрасване на една гледна точка към друга(за получаване на панорама)
     * Web app
         * да се направят фукции връщане point cloud, mesh - файловеи формати .ply, .stl, .obj. Кухи, ако не се направи имплементация
         * връща изображенията в архив и после погат да се пуснат в MeshLap.
@@ -38,6 +39,7 @@ def main():
     # patternsArr = scanY.patterns.genetare(3,(360,615),(6,8)) # шаблоните
     # for key, pattr in patternsArr.items():
     #     for i,img in enumerate(pattr):
+    #         cv.imwrite("./Projector_Calib" + "/tmpPattern.jpg", img)
     #         # img = scanY.cameraPi.undistortImage(img,scanY.cameraPi.stereoCalibrationRes["cameraMatrix"],
     #         #                           scanY.cameraPi.stereoCalibrationRes["cameraDistortion"], None,
     #         #                           scanY.cameraPi.stereoCalibrationRes["cRoi"])
