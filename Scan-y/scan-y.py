@@ -59,10 +59,10 @@ if __name__=="__main__":
     #scan
     parser_scan = subparsers.add_parser(
         'scan', help='Scan object')
-    parser_scan.add_argument('pattern', type=int, nargs='?',default = 3, help='Pattern for scanning.'
-                                '0-WHITE, 1-BLACK, 2-OPENCV_GRAY_CODE, 3(default)-MANUAL_GRAY_CODE, 4-PHASE_SHIFTING, 5-GRAY_CODE_AND_PHASE_SHIFTING, 6-BINARY, 7-STRIPE,')
-    parser_scan.add_argument('stepSize', type=int, nargs='?', choices=range(1,200), metavar="stepSize[1-200]",default = 10,
-                                help='Size of step of step motor.(1 step=1.8 degrees). Range between 1 and 200. Default:10')
+    parser_scan.add_argument('pattern', type=int, nargs='?',default = 3,choices=list([1,2,3,4,5,6,7]), help='Pattern for scanning.'
+                                '0-WHITE, 1-BLACK, 2-OPENCV_GRAY_CODE, 3(default)-MANUAL_GRAY_CODE, 4-PHASE_SHIFTING, 5-GRAY_CODE_AND_PHASE_SHIFTING, 6-BINARY, 7-STRIPE')
+    parser_scan.add_argument('stepSize', type=int, nargs='?', choices=range(1,200), metavar="stepSize [1-200]",default = 10,
+                                help='Size of step of step motor (1 step=1.8 degrees). Range between 1 and 200. Default:10')
     parser_scan.set_defaults(func=scan)
 
     #Stereo calibration
