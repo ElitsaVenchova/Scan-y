@@ -46,15 +46,15 @@ class Reconstruct3D:
 
         for scan_no in [10]:#range(0, stepsCnt, stepSize):#
             self.__init__(self.cameraPi)#Класът се инициализира отново, за да се изчистят вече запазените данни от предходното сканиране
-            # self.manualMapGrayCode(dir, patternCode, scan_no) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
+            self.manualMapGrayCode(dir, patternCode, scan_no) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
             # Тези долу са само резервни варианти, които не работят или не са оптимални, но могат да се използват в бъдеще
             # # # self.autoMapGrayCode(dir) # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
             # # #
             # # # self.filterGrayCode() # smoothing filter. Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
             # # # self.genPointCloud(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"]) # преобразуване на disparity в дълбочина.
 
-            # self.savePointCloud(dir, scan_no) # Запазване на облака от точки като xyzrbg файл
-            self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
+            self.savePointCloud(dir, scan_no) # Запазване на облака от точки като xyzrbg файл
+            # self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
 
     #Прочита изображенията за определен шаблон
     def readImages(self, dir, patternCode,  readType, scan_no = '', img_no='?'):
@@ -190,10 +190,8 @@ class Reconstruct3D:
                     #разстоянието между точките в изборажението и шаблона
                     #добавя се +1 на всички координати, за да може при умножението по коефициентите за разликата на изображенияна,
                     #да се получи вярна стойност. Иначе за y=1 => 1*1.2 = 1.2, а това реално е втория пиксел и трябва да бъде 2*1.2 = 2.4
-                    dist = math.sqrt(pow((pix[0]+1)-(patPix[0]+1),2)
-                            + pow((pix[1]+1)-(patPix[1]+1),2))
-                    # math.sqrt(pow((pix[0]+1)*self.cCoef[0]-(patPix[0]+1)*self.pCoef[0],2)
-                    #         + pow((pix[1]+1)*self.cCoef[1]-(patPix[1]+1)*self.pCoef[1],2))
+                    dist = math.sqrt(pow((pix[0]+1)*self.cCoef[0]-(patPix[0]+1)*self.pCoef[0],2)
+                            + pow((pix[1]+1)*self.cCoef[1]-(patPix[1]+1)*self.pCoef[1],2))
                     # За пискела не е намирано съвпадение или намереното разстояние е минимално
                     if self.mask[int(pix[0]), int(pix[1])] == 0 or dist < self.grayCodeMap[int(pix[0]), int(pix[1]), 2]:
                         self.grayCodeMap[int(pix[0]), int(pix[1]), :] = np.array([pix[0], pix[1],dist])#записва съответствята на координатите между снимките и шаблоните
@@ -275,7 +273,7 @@ class Reconstruct3D:
     # dir - директорията, в която са запазени point clound да всяка гледна точка
     # scan_no - номер на сканиране. Ако не е подадено, зарежда всички гледни точки
     def loadPointCloud(self, dir, scan_no):
-        for scan_no2 in [0,30]:#range(0, 200, 10):#range(0, 50, 10):#
+        for scan_no2 in [30]:#range(0, 200, 10):#range(0, 50, 10):#
             fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no2)
             pcd = o3d.io.read_point_cloud(fileFullName)
             # points = np.asarray(pcd.points)
