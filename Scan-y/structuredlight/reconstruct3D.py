@@ -11,9 +11,7 @@ import open3d as o3d
 """
 class Reconstruct3D:
 
-    FILTER = 1# Размер на филтъта. 1-3x3 прозорец
-    BLACK_THRESHOLD = 20#праг на черното
-    WHITE_THRESHOLD = 4#праг на бялото
+
 
     BLACK_N_WHITE = 0 #Флаг, изображението да се прочете като черно бяло
     COLOR = 1 # Флаг, изображението да се прочете като цветно
@@ -75,6 +73,8 @@ class Reconstruct3D:
 
     # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
     def autoMapGrayCode(self, dir):
+        BLACK_THRESHOLD = 20#праг на черното
+        WHITE_THRESHOLD = 4#праг на бялото
         self.colorImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)[0]
 
         white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0] # Напълно осветено изображение
@@ -82,14 +82,14 @@ class Reconstruct3D:
         grayCodeImgs = self.readImages(dir, Patterns.OPENCV_GRAY_CODE, self.BLACK_N_WHITE) # GrayCode изображенията
 
         graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1]) # Шаблоните
-        graycode.setBlackThreshold(self.BLACK_THRESHOLD) # задаване на праг на бялото
-        graycode.setWhiteThreshold(self.WHITE_THRESHOLD) # задаване на праг на черното
+        graycode.setBlackThreshold(BLACK_THRESHOLD) # задаване на праг на бялото
+        graycode.setWhiteThreshold(WHITE_THRESHOLD) # задаване на праг на черното
         yerr, nerr = 0,0 # за DEBUG - за колко пиксела има успешно съвпадение
         for y in range(self.cSize[0]):
             for x in range(self.cSize[1]):
                 if (y>=white.shape[0] or x>=white.shape[1] or
                     y>=black.shape[0] or x>=black.shape[1] or
-                    int(white[y, x]) - int(black[y, x]) <= self.BLACK_THRESHOLD): #т.е. пиксела е черен и не може да се обработи(255-0 трябва да дава бяло, а не черно)
+                    int(white[y, x]) - int(black[y, x]) <= BLACK_THRESHOLD): #т.е. пиксела е черен и не може да се обработи(255-0 трябва да дава бяло, а не черно)
                     continue
                 err, proj_pix = graycode.getProjPixel(grayCodeImgs, x, y)#за (x,y) от снимките, връща (x,y) от шаблоните
                 if err:
@@ -207,7 +207,12 @@ class Reconstruct3D:
     # smoothing filter
     # Премахване на артефакти и изглаждане граници заден-преден фон, допълнително заглажда рязките разлики в дълбочината. НЕ РАБОТИ МНОГО ДОБРЕ И Е СПРЯНО!
     def filterGrayCode(self):
-        ext_mask = self.morphologyEx(self.mask) # създава плавна граница на обекта и изчиства страничния бял шум от задния план
+        FILTER = 1# Размер на филтъта. 1-3x3 прозорец
+        #Трансгормация Dilation(създава плавна граница на обекта) последвана от Erosion(изчиства страничния бял шум от задния план).
+        #Използва се за премахване на малки черни дупки в предния план.
+        # създава плавна граница на обекта и изчиства страничния бял шум от задния план
+        ext_mask = cv.morphologyEx(self.mask, cv.MORPH_CLOSE,
+                                    np.ones((FILTER*2+1, FILTER*2+1)))
 
         for y in range(self.cSize[0]):
             for x in range(self.cSize[1]):
@@ -215,8 +220,8 @@ class Reconstruct3D:
                     sum_x = 0
                     sum_y = 0
                     cnt = 0
-                    for dy in range(-self.FILTER, self.FILTER+1):#[-1,0,1]
-                        for dx in range(-self.FILTER, self.FILTER+1):#[-1,0,1]
+                    for dy in range(-FILTER, FILTER+1):#[-1,0,1]
+                        for dx in range(-FILTER, FILTER+1):#[-1,0,1]
                             #Взимат се съседни пиксели
                             ty = y + dy
                             tx = x + dx
@@ -235,12 +240,6 @@ class Reconstruct3D:
                         print(self.grayCodeMap[y, x, 2])
 
             self.mask = ext_mask
-
-    #Трансгормация Dilation(създава плавна граница на обекта) последвана от Erosion(изчиства страничния бял шум от задния план).
-    #Използва се за премахване на малки черни дупки в предния план.
-    def morphologyEx(self, mask):
-        return cv.morphologyEx(mask, cv.MORPH_CLOSE,
-                                    np.ones((self.FILTER*2+1, self.FILTER*2+1)))#Прилага се филтър 3x3
 
     """
      Генeрира облака от точки от матрицата на Q и мапинга на разликата между пикселите в едното и другото изображение (x-x')

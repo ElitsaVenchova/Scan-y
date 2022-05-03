@@ -1,9 +1,0 @@
-servo - black:ground ,red:power ,yellow: singal(control)
-stepper motor(Nema 14??? - SY42STH47-1684B) -
-    + stepper motor driver(A4988) -
-    + захранване 12V,5A
-        + кондензатор най-малко 47 µF(микрофарада) - по-дългия крак или по-малката бяла ивица е минус
-		+ има снимки на свързването в директория setup_photos
-    + info:
-        * https://www.pololu.com/product/1182,
-        * https://www.robotev.com/product_info.php?cPath=1_40_45&products_id=311
