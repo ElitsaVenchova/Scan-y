@@ -6,9 +6,6 @@ import glob
 import math
 import open3d as o3d
 
-from matplotlib import pyplot as plt
-# import open3d as o3d
-
 """
     Рекоструиране на обекта от изображения в Point clound и Mesh
 """
@@ -39,6 +36,7 @@ class Reconstruct3D:
         # Използва се при изичсляването на разстоянието, за да може да е пропорционално
         self.cCoef = (max(self.pSize[0]/self.cSize[0],1), max(self.pSize[1]/self.cSize[1],1))
         self.pCoef = (max(self.cSize[0]/self.pSize[0],1), max(self.cSize[1]/self.pSize[1],1))
+        self.fullPointClound = np.array([]) # open3d point cloud
 
     """
         Основната функция за реконструкция.
@@ -275,25 +273,26 @@ class Reconstruct3D:
         print(fileFullName)
 
     # Зареждане на облака от точки от xyzrbg файл
+    # dir - директорията, в която са запазени point clound да всяка гледна точка
+    # scan_no - номер на сканиране. Ако не е подадено, зарежда всички гледни точки
     def loadPointCloud(self, dir, scan_no):
-        res = np.array([])
         for scan_no2 in [0,30]:#range(0, 200, 10):#range(0, 50, 10):#
             fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no2)
             pcd = o3d.io.read_point_cloud(fileFullName)
-            points = np.asarray(pcd.points)
-            pcd = pcd.select_by_index(np.where(points[:,1] > 600)[0])#700
-            points = np.asarray(pcd.points)
-            pcd = pcd.select_by_index(np.where(points[:,1] < 1000)[0])
-            points = np.asarray(pcd.points)
-            pcd = pcd.select_by_index(np.where(points[:,2] < 1000)[0])
+            # points = np.asarray(pcd.points)
+            # pcd = pcd.select_by_index(np.where(points[:,1] > 600)[0])#700
+            # points = np.asarray(pcd.points)
+            # pcd = pcd.select_by_index(np.where(points[:,1] < 1000)[0])
+            # points = np.asarray(pcd.points)
+            # pcd = pcd.select_by_index(np.where(points[:,2] < 1000)[0])
             # downpcd = pcd.voxel_down_sample(voxel_size=0.05) # down sample на входните точки, за да не са твърде много и да се обработва по-лесно.
             R = pcd.get_rotation_matrix_from_xyz((0, -np.deg2rad(1.8*scan_no2), 0))
             pcd = pcd.rotate(R, center=(885,1000,295))
 # 885,1000,295
-            res = np.append(res,pcd)
+            self.fullPointClound = np.append(self.fullPointClound,pcd)
 
         # За тест може да се визуализира пълния или down sample облак от точки
-        self.visualizationPointCloud(res)#downpcd # Визуализиране на облака от точки
+        self.visualizationPointCloud(self.fullPointClound)#downpcd # Визуализиране на облака от точки
 
     # Визуализиране на облака от точки
     def visualizationPointCloud(self, pcd):
