@@ -19,12 +19,15 @@ class CameraPi:
     STEREO_CALIBRATION_DIR = "./Stereo_Calib" # Резултатът от стерео калибрирането се записва в главната директория
     STEREO_CALIBRATION_FILE = "/StereoCalibResult.json" # Файл с резултата от калибрирането
 
+    BLACK_N_WHITE = 0 #Флаг, изображението да се прочете като черно бяло
+    COLOR = 1 # Флаг, изображението да се прочете като цветно
+
     # Инициализиране на необходимите параметри на камерата
     def __init__(self):
         # зареждане на вътрешните параметри на камерата
         self.cCalibrationRes = self.readCalibrationResult(self.CALIBRATION_DIR)
         # зареждане на вътрешните параметри от стерео калибрирането
-        self.stereoCalibrationRes = self.readStereoCalibrationResult(self.STEREO_CALIBRATION_DIR)
+        self.stereoCalibrationRes = self.readStereoCalibrationResult()
 
     """
         Прави снимка с камерата и връща името на jpg файла.
@@ -74,16 +77,30 @@ class CameraPi:
         #     img = self.undistortImage(img,calibRes)
         return img
 
+    #Прочита изображенията за определен шаблон
+    def loadPatternImages(self, dir, patternCode,  readType, scan_no = '', img_no='?'):
+        # Зареждат се всички изображения, които отговорят на шаблона
+        # img_no - ?(точно един символ),*(0 или повече символи),конретно чисто(зарежда изображението с конкретен номер)
+        imgsNames = natsorted(glob.glob('./{0}/image{1}{2}{3}.jpg'.format(dir,scan_no,patternCode,img_no)))
+        imgs = [] # масив със заредените изображения
+        img = None
+        for fname in imgsNames:
+            if readType == self.BLACK_N_WHITE:#Изображението се прочита черно бяло
+                img = self.loadImage(fname,cv.IMREAD_GRAYSCALE)
+            else:# иначе цветно
+                img = self.loadImage(fname)
+            imgs.append(img)
+        return np.array(imgs)
+
     """
         Стерео калибриране на камерата и проектора.
-        stereoCalibrationDir - Директория съдържаща файловете за стерео калибриране и, в която ще бъде запазен резултата
         patt - шаблонът на шахматна дъска, който е бил прожектиран и заснет от камерата. Ще бъде представен
                "като това, което вижда проектора, ако беше камера".
         projCalibResults - зарежда се в structuredlight, защото трябва да се вземе размера на проектора за генериране на шаблон
     """
     def stereoCalibrate(self, chessboardSize, projCalibResults):
         camCalibResults = self.cCalibrationRes
-        objpoints, camImgpoints, projImgpoints = self.stereoFindChessboardCorners(self.STEREO_CALIBRATION_DIR, chessboardSize)# Точките на дъската, в изображението на камерата и в проектора.
+        objpoints, camImgpoints, projImgpoints = self.stereoFindChessboardCorners(chessboardSize)# Точките на дъската, в изображението на камерата и в проектора.
 
         # cv.CALIB_USE_INTRINSIC_GUESS - преизчислява cameraMatrix, cameraDistortion, projectorMatrix, projectorDistortion
         # r_matrix, t_vecs - rotation и transition между камерата и проектораl. Това основно се използва за
@@ -112,7 +129,7 @@ class CameraPi:
             "t_vecs": t_vecs,
             "disparityToDepthMatrix": disparityToDepthMatrix
             }
-        self.writeStereoCalibrationResult(self.STEREO_CALIBRATION_DIR,stereoCalibrationRes)
+        self.writeStereoCalibrationResult(stereoCalibrationRes)
 
     """
         Калибриране на камерата.
@@ -217,7 +234,7 @@ class CameraPi:
         return cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None, 0)
 
     # Стерео намиране на ъглите на квадратите
-    def stereoFindChessboardCorners(self, stereoCalibrationDir, chessboardSize):
+    def stereoFindChessboardCorners(self, chessboardSize):
         # !!!ВАЖНО: горе с calibrate, има описания какво означават тези редове
         objp = np.zeros((chessboardSize[0]*chessboardSize[1],3), np.float32)
         objp[:,:2] = np.mgrid[0:chessboardSize[0],0:chessboardSize[1]].T.reshape(-1,2)
@@ -225,7 +242,7 @@ class CameraPi:
         imgpoints = [] # 2d points in image plane.
 
         # Взимане на imgpoints за камерата
-        fname = natsorted(glob.glob('{0}/{1}'.format(stereoCalibrationDir,'image*.jpg')))[0]
+        fname = natsorted(glob.glob('{0}/{1}'.format(self.STEREO_CALIBRATION_DIR,'image*.jpg')))[0]
         img = self.loadImage(fname)
         ret, corners = cv.findChessboardCorners(img,(chessboardSize[0],chessboardSize[1]), None)
         if ret == True:
@@ -251,7 +268,7 @@ class CameraPi:
     # Калибриране на изображението
     def undistortImage(self, img, calibrationRes, calibrationDir=None):
         # Премахване на изкривяването
-        dst = cv.undistort(img, calibrationRes["matrix"], calibrationRes["distortion"], None, calibrationRes["newCameraMatrix"])
+        dst = cv.undistort(img, calibrationRes["matrix"], calibrationRes["distortion"], img.shape[:1], calibrationRes["matrix"])#newCameraMatrix
 
         # СПИРА СЕ ИЗРЯЗВАНЕТО ПО ROI, ЗАЩОТО ВИНАГИ ТРЯБВА ПЪЛНОТО ИЗОБРАЖЕНИЕ
         # СЪЩО stereoRectify ВРЪЩА ВИНАГИ 0,0,0,0 И ТРЯБВА ДА СЕ ОПРАВИ, АКО ЩЕ СЕ ПРИЛАГА ИЗРЯЗВАНЕ НА НЕВАЛИДНИ ПИКСЕЛИ
@@ -282,9 +299,9 @@ class CameraPi:
     """
         Записесне на резултатите от stereo калбирането във файл
     """
-    def writeStereoCalibrationResult(self, stereoCalibrationDir, stereoCalibrationRes):
+    def writeStereoCalibrationResult(self, stereoCalibrationRes):
         # отваряне на файл за записване на резултата от калибрацията
-        fs = cv.FileStorage(stereoCalibrationDir + self.STEREO_CALIBRATION_FILE, cv.FILE_STORAGE_WRITE)
+        fs = cv.FileStorage(self.STEREO_CALIBRATION_DIR + self.STEREO_CALIBRATION_FILE, cv.FILE_STORAGE_WRITE)
         # Параметри на камерата
         fs.write('cShape', stereoCalibrationRes["cShape"])
         fs.write('pShape', stereoCalibrationRes["pShape"])
@@ -324,8 +341,8 @@ class CameraPi:
     """
         Прочитане на резултатите от stereo калбирането
     """
-    def readStereoCalibrationResult(self, stereoCalibrationDir):
-        stereoCalibResulPath = stereoCalibrationDir + self.STEREO_CALIBRATION_FILE
+    def readStereoCalibrationResult(self):
+        stereoCalibResulPath = self.STEREO_CALIBRATION_DIR + self.STEREO_CALIBRATION_FILE
         file_exists = os.path.exists(stereoCalibResulPath)
 
         stereoCalibrationRes = None

@@ -11,11 +11,6 @@ import open3d as o3d
 """
 class Reconstruct3D:
 
-
-
-    BLACK_N_WHITE = 0 #Флаг, изображението да се прочете като черно бяло
-    COLOR = 1 # Флаг, изображението да се прочете като цветно
-
     FILE_NAME = 'pointCloud'
 
     def __init__(self,cameraPi):
@@ -54,32 +49,17 @@ class Reconstruct3D:
             # # # self.genPointCloud(self.cameraPi.stereoCalibrationRes["disparityToDepthMatrix"]) # преобразуване на disparity в дълбочина.
 
             self.savePointCloud(dir, scan_no) # Запазване на облака от точки като xyzrbg файл
-            # self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
-
-    #Прочита изображенията за определен шаблон
-    def readImages(self, dir, patternCode,  readType, scan_no = '', img_no='?'):
-        # Зареждат се всички изображения, които отговорят на шаблона
-        # img_no - ?(точно един символ),*(0 или повече символи),конретно чисто(зарежда изображението с конкретен номер)
-        imgsNames = natsorted(glob.glob('./{0}/image{1}{2}{3}.jpg'.format(dir,scan_no,patternCode,img_no)))
-        imgs = [] # масив със заредените изображения
-        img = None
-        for fname in imgsNames:
-            if readType == self.BLACK_N_WHITE:#Изображението се прочита черно бяло
-                img = self.cameraPi.loadImage(fname,cv.IMREAD_GRAYSCALE)
-            else:# иначе цветно
-                img = self.cameraPi.loadImage(fname)
-            imgs.append(img)
-        return np.array(imgs)
+            self.loadPointCloud(dir, scan_no) # Зареждане на облака от точки от xyzrbg файл
 
     # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
     def autoMapGrayCode(self, dir):
         BLACK_THRESHOLD = 20#праг на черното
         WHITE_THRESHOLD = 4#праг на бялото
-        self.colorImg = self.readImages(dir, Patterns.WHITE_PATTERN, self.COLOR)[0]
+        self.colorImg = self.cameraPi.loadPatternImages(dir, Patterns.WHITE_PATTERN, self.cameraPi.COLOR)[0]
 
-        white = self.readImages(dir, Patterns.WHITE_PATTERN, self.BLACK_N_WHITE)[0] # Напълно осветено изображение
-        black = self.readImages(dir, Patterns.BLACK_PATTERN, self.BLACK_N_WHITE)[0] # Тъмно изображение
-        grayCodeImgs = self.readImages(dir, Patterns.OPENCV_GRAY_CODE, self.BLACK_N_WHITE) # GrayCode изображенията
+        white = self.cameraPi.loadPatternImages(dir, Patterns.WHITE_PATTERN, self.cameraPi.BLACK_N_WHITE)[0] # Напълно осветено изображение
+        black = self.cameraPi.loadPatternImages(dir, Patterns.BLACK_PATTERN, self.cameraPi.BLACK_N_WHITE)[0] # Тъмно изображение
+        grayCodeImgs = self.cameraPi.loadPatternImages(dir, Patterns.OPENCV_GRAY_CODE, self.cameraPi.BLACK_N_WHITE) # GrayCode изображенията
 
         graycode = cv.structured_light_GrayCodePattern.create(self.pSize[0], self.pSize[1]) # Шаблоните
         graycode.setBlackThreshold(BLACK_THRESHOLD) # задаване на праг на бялото
@@ -105,17 +85,17 @@ class Reconstruct3D:
     # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
     # Горното не работи много вярно
     def manualMapGrayCode(self, dir, patternCode, scan_no):
-        self.colorImg = self.readImages(dir, Patterns.INV_PATTERN, self.COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
+        self.colorImg = self.cameraPi.loadPatternImages(dir, Patterns.INV_PATTERN, self.cameraPi.COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
 
         print('Pattern code: ', patternCode, '/ scan_no: ', scan_no)
         patternImgs = Patterns().genetare(patternCode, self.pSize) # Шаблоните
 
         # Съдържа изображенията в 4-те различни варианта
         grayCodeImgs = {
-            Patterns.IMAGE_PATTERN: self.readImages(dir, Patterns.IMAGE_PATTERN, self.BLACK_N_WHITE, scan_no),
-            Patterns.INV_PATTERN: self.readImages(dir, Patterns.INV_PATTERN, self.BLACK_N_WHITE, scan_no),
-            Patterns.TRANS_PATTERN: self.readImages(dir, Patterns.TRANS_PATTERN, self.BLACK_N_WHITE, scan_no),
-            Patterns.TRANS_INV_PATTERN: self.readImages(dir, Patterns.TRANS_INV_PATTERN, self.BLACK_N_WHITE, scan_no)}
+            Patterns.IMAGE_PATTERN: self.cameraPi.loadPatternImages(dir, Patterns.IMAGE_PATTERN, self.cameraPi.BLACK_N_WHITE, scan_no),
+            Patterns.INV_PATTERN: self.cameraPi.loadPatternImages(dir, Patterns.INV_PATTERN, self.cameraPi.BLACK_N_WHITE, scan_no),
+            Patterns.TRANS_PATTERN: self.cameraPi.loadPatternImages(dir, Patterns.TRANS_PATTERN, self.cameraPi.BLACK_N_WHITE, scan_no),
+            Patterns.TRANS_INV_PATTERN: self.cameraPi.loadPatternImages(dir, Patterns.TRANS_INV_PATTERN, self.cameraPi.BLACK_N_WHITE, scan_no)}
 
         yerr = 0 # За debug - колко намерени пиксела има
         white = grayCodeImgs[Patterns.INV_PATTERN][0] # Напълно осветено изображение #Първият шаблон от Inverse е изцяло бял
