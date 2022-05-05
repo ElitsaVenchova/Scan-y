@@ -31,7 +31,7 @@ class Patterns:
 
     # Генериране на шаблон според подадения код
     # chessboardSize - размер на шахматна дъска(бр. пресичания на черен и черен квадрат по диагонал). Използва се, когато patternCode = self.CHESS_BOARD
-    def genetare(self, patternCode, pSize, chessboardSize=None):
+    def genetare(self, patternCode, pSize, pattCnt=None, chessboardSize=None):
         if patternCode == self.WHITE:
             return self.white(pSize)
         elif patternCode == self.BLACK:
@@ -42,7 +42,7 @@ class Patterns:
             patterns.update(self.opencvGray(pSize))
             return patterns
         elif patternCode == self.MANUAL_GRAY_CODE:
-            return self.manualGray(pSize)
+            return self.manualGray(pSize,pattCnt)
         elif patternCode == self.PHASE_SHIFTING:
             return self.phaseShifting(pSize)
         elif patternCode == self.GRAY_CODE_AND_PHASE_SHIFTING:
@@ -89,14 +89,14 @@ class Patterns:
     """
         Собствена имплементация на Gray code шаблон
     """
-    def manualGray(self, pSize):
+    def manualGray(self, pSize, pattCnt):
         height, width = pSize
-        patternCnt = int(math.log2(width))#+1#Има още един шаблон, където всяко рае е с ширина 1 пиксел, но проекторът не е с толкова висока резолюция, за да се вижда.
+        patternCnt = pattCnt or self.binaryCodePattCnt(pSize)
         # #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         # #<<Горното2>> = (<<Горното>>+1)/2-в този шаблон редът е- чббччббчч(binary-чбчбчб). Връща по двойки index 0=0, ind 1 и 2=2(от (1+1)/2=2 и (2+1)/2=2),ind 3 и 4=3
         # #<<Горното2>>%2 - за четни двойки 0, иначе 1
-        imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        imgMatr = 255*np.fromfunction(lambda x,y: (((y/(width/pow(2,x)))+1)/2)%2, (patternCnt[0],width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        imgMatrTrans = 255*np.fromfunction(lambda x,y: (((y/(height/pow(2,x)))+1)/2)%2, (patternCnt[1],height), dtype=int).astype(np.uint8)#uint8 e [0,255]
 
         return self.multiply(imgMatr,imgMatrTrans,pSize)
 
@@ -124,11 +124,11 @@ class Patterns:
     """
     def binary(self, pSize):
         height, width = pSize
-        patternCnt = int(math.log2(width))#+1#Има още един шаблон, където всяко рае е с ширина 1 пиксел, но проекторът не е с толкова висока резолюция, за да се вижда.
+        patternCnt = self.binaryCodePattCnt(pSize)
         #<<Горното>> = width/pow(2,x) - през колко трябва да се сменят 0/1;
         #(y/(width/pow(2,x)))%2 - ако y/<<Горното>> е четно, то 0, иначе 1
-        imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        imgMatrTrans = 255*np.fromfunction(lambda x,y: (y/(height/pow(2,x)))%2, (patternCnt,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        imgMatr = 255*np.fromfunction(lambda x,y: (y/(width/pow(2,x)))%2, (patternCnt[0],width), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        imgMatrTrans = 255*np.fromfunction(lambda x,y: (y/(height/pow(2,x)))%2, (patternCnt[1],height), dtype=int).astype(np.uint8)#uint8 e [0,255]
 
         return self.multiply(imgMatr,imgMatrTrans,pSize)
 
@@ -140,7 +140,7 @@ class Patterns:
         # #шаблони е ширината(за всяка линия по един)
         #само по една линия на всеки шаблон отдясно на ляво
         imgMatr = 255*np.fromfunction(lambda x,y: x==y, (width,width), dtype=int).astype(np.uint8)#uint8 e [0,255]
-        imgMatrTrans = 255*np.fromfunction(lambda x,y: x==y, (width,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
+        imgMatrTrans = 255*np.fromfunction(lambda x,y: x==y, (height,height), dtype=int).astype(np.uint8)#uint8 e [0,255]
 
         return self.multiply(imgMatr,imgMatrTrans,pSize)
 
@@ -155,7 +155,6 @@ class Patterns:
         imgMatrTrans = self.chessboard(pSize,(chH,chW))
 
         return {self.CHESS_BOARD_PATTERN: np.array([imgMatr[0],imgMatrTrans[0]])}
-
 
     """
         Генериране на шахматен шаблон по зададените размери на изображението и дъската.
@@ -181,6 +180,15 @@ class Patterns:
         imgMatr = np.reshape(imgMatr,(1,height,width))
 
         return imgMatr
+
+    """
+        Връща броя шаблони при определа ширина на изображението.
+        Това позволява да се създават шаблони с различна големина, но еднакъв брой райета.
+        Използва се в reconstruct3D, защото размера на камерата е по-голям от този на проектора и искаме да увеличим резолюцията без промяна на броя шаблони.
+    """
+    def binaryCodePattCnt(self, pSize):
+        height, width = pSize
+        return (int(math.log2(width)),int(math.log2(height)))#+1#Има още един шаблон, където всяко райе е с ширина 1 пиксел, но проекторът не е с толкова висока резолюция.
 
     # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
     # pSize = (width, height)

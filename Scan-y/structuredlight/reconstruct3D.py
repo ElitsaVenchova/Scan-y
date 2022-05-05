@@ -21,14 +21,11 @@ class Reconstruct3D:
 
         self.mask = np.zeros(self.cSize, np.uint8)# маска кои пиксели стават за обработване.След инициализацията има стойност False
 
-        self.colorImg = np.zeros((self.cSize[0],self.cSize[1],3), np.float32)
+        self.colorImg = np.zeros((self.cSize[0],self.cSize[1],3), np.int)
         self.grayCodeMap = np.zeros((self.cSize[0],self.cSize[1], 3), np.float32)#връзката на координатите на пикселите на снимката и шаблона GrayCode
         self.pointCloud = np.zeros(self.cSize, np.float32) # крайния резултат. Облак от точки.
 
-        # Коефицинти с разликата спрямо по-голямото изображение.
-        # Използва се при изичсляването на разстоянието, за да може да е пропорционално
-        self.cCoef = (max(self.pSize[0]/self.cSize[0],1), max(self.pSize[1]/self.cSize[1],1))
-        self.pCoef = (max(self.cSize[0]/self.pSize[0],1), max(self.cSize[1]/self.pSize[1],1))
+        # Съдържа 360 градуса сканиране
         self.fullPointClound = np.array([]) # open3d point cloud
 
     """
@@ -39,7 +36,7 @@ class Reconstruct3D:
     """
     def reconstruct(self, dir, patternCode, stepsCnt, stepSize):
 
-        for scan_no in [10]:#range(0, stepsCnt, stepSize):#
+        for scan_no in [30]:#range(0, stepsCnt, stepSize):#
             self.__init__(self.cameraPi)#Класът се инициализира отново, за да се изчистят вече запазените данни от предходното сканиране
             self.manualMapGrayCode(dir, patternCode, scan_no) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
             # Тези долу са само резервни варианти, които не работят или не са оптимални, но могат да се използват в бъдеще
@@ -85,11 +82,10 @@ class Reconstruct3D:
     # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
     # Горното не работи много вярно
     def manualMapGrayCode(self, dir, patternCode, scan_no):
-        self.colorImg = self.cameraPi.loadPatternImages(dir, Patterns.INV_PATTERN, self.cameraPi.COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
+        colorImgAll = self.cameraPi.loadPatternImages(dir, Patterns.INV_PATTERN, self.cameraPi.COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
 
         print('Pattern code: ', patternCode, '/ scan_no: ', scan_no)
-        patternImgs = Patterns().genetare(patternCode, self.pSize) # Шаблоните
-
+        patternImgs = Patterns().genetare(patternCode, self.cSize,Patterns().manualGrayCodePattCnt(self.pSize)) # Шаблоните
         # Съдържа изображенията в 4-те различни варианта
         grayCodeImgs = {
             Patterns.IMAGE_PATTERN: self.cameraPi.loadPatternImages(dir, Patterns.IMAGE_PATTERN, self.cameraPi.BLACK_N_WHITE, scan_no),
@@ -110,19 +106,19 @@ class Reconstruct3D:
 
         # Съдържа измерените стойности за пикселите на шаблоните в 4-те различни варианта
         tempPattGrayCodeMap = {
-            Patterns.IMAGE_PATTERN: np.zeros(self.pSize, np.uint16),
-            Patterns.INV_PATTERN: np.zeros(self.pSize, np.uint16),
-            Patterns.TRANS_PATTERN: np.zeros(self.pSize, np.uint16),
-            Patterns.TRANS_INV_PATTERN: np.zeros(self.pSize, np.uint16)}
+            Patterns.IMAGE_PATTERN: np.zeros(self.cSize, np.uint16),
+            Patterns.INV_PATTERN: np.zeros(self.cSize, np.uint16),
+            Patterns.TRANS_PATTERN: np.zeros(self.cSize, np.uint16),
+            Patterns.TRANS_INV_PATTERN: np.zeros(self.cSize, np.uint16)}
 
         for pattType in patternImgs: #итериране по видовете шаблони
             print(pattType)
             if len(grayCodeImgs[pattType]) != len(patternImgs[pattType]):
-                raise ValueError('Number of patterns and images is not equal for pattern ',pattType,'(',len(grayCodeImgs[pattType]),len(patternImgs[pattType]),')!')
+                raise ValueError('Number of patterns and images is not equal for pattern {0}({1},{2})!'.format(pattType,len(patternImgs[pattType]),len(grayCodeImgs[pattType])))
             # Създава степените, на които трябва да се повдигне съответното изображение. Първото е на степен 0, второто е на степен 1 и т.н.
             # np.mgrid[:4,:3,:2] = [[[0,0,0],[0,0,0]],[[1,1,1],[1,1,1]],[[2,2,2],[2,2,2]],[[3,3,3],[3,3,3]]]
             ind = np.mgrid[:len(grayCodeImgs[pattType]),:self.cSize[0],:self.cSize[1]][0]
-            # (white[y,x]+black[y,x])/2 - средно аритметично на цвета на пиксела, когато е оцветен и когато не е.
+            # ((white+black)/2) + 25 - средно аритметично на интензитета на пиксела, когато е осветен и когато не е.
             msk = grayCodeImgs[pattType]>((white+black)/2) + 25 #white-30# макса дали съответния индекс трябва да се използва за повдигане с основа 2
             # msk = np.array([self.morphologyEx(255*m) for m in msk.astype(np.uint16)]).astype(np.bool_)# Засега е по-лошо. създава плавна граница на обекта и изчиства страничния бял шум от задния план
 
@@ -130,13 +126,12 @@ class Reconstruct3D:
             # т.е. сумира се съответния пиксел за всички изображения в шаблона
             tempGrayCodeMap[pattType] = np.sum(np.power(2, ind)*msk, axis=0)
 
-            # Аналогично за шаблоните като тук размерът се взима от pSize и сравнението е директно с 255 цвят на пиксела
-            indPatt = np.mgrid[:len(patternImgs[pattType]),:self.pSize[0],:self.pSize[1]][0]
+            # Аналогично за шаблоните като тук сравнението е директно с 255 цвят на пиксела
+            indPatt = np.mgrid[:len(patternImgs[pattType]),:self.cSize[0],:self.cSize[1]][0]
             mskPatt = patternImgs[pattType] == 255
             tempPattGrayCodeMap[pattType] = np.sum(np.power(2, indPatt)*mskPatt, axis=0)
 
         # DEBUG
-        # [675:1030,745:1145]
         # np.savetxt('Img{0}.txt'.format(scan_no), x, fmt='%i', delimiter='\t')
         # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,'txt'), img)
 
@@ -163,20 +158,22 @@ class Reconstruct3D:
         # # mapImgsPatts = np.array([[x0, y0] for x0 in reshapeStackImgs for y0 in reshapeStackPatts])
         # # mapImgsPatts = np.array(list(itertools.product(*[stackImgs,stackPatts])))
 
-        for i,pix in enumerate(stackImgs):
-            for patPix in stackPatts[(pix[[2,4]]==stackPatts[:,[2,4]]).all(axis=1)]:
+        for patPix in stackPatts:
+            for pix in stackImgs[(patPix[[2,4]]==stackImgs[:,[2,4]]).all(axis=1)]:#филтрират се само тези с еднакъв код от вертикален и хоризонтален шаблон
                 if (pix[2] == patPix[2] and pix[4] == patPix[4]):
 
                     #разстоянието между точките в изборажението и шаблона
                     #добавя се +1 на всички координати, за да може при умножението по коефициентите за разликата на изображенияна,
                     #да се получи вярна стойност. Иначе за y=1 => 1*1.2 = 1.2, а това реално е втория пиксел и трябва да бъде 2*1.2 = 2.4
-                    dist = math.sqrt(pow((pix[0]+1)*self.cCoef[0]-(patPix[0]+1)*self.pCoef[0],2)
-                            + pow((pix[1]+1)*self.cCoef[1]-(patPix[1]+1)*self.pCoef[1],2))
+                    dist = math.sqrt(pow((pix[0]+1)-(patPix[0]+1),2)
+                            + pow((pix[1]+1)-(patPix[1]+1),2))
                     # За пискела не е намирано съвпадение или намереното разстояние е минимално
-                    if self.mask[int(pix[0]), int(pix[1])] == 0 or dist < self.grayCodeMap[int(pix[0]), int(pix[1]), 2]:
-                        self.grayCodeMap[int(pix[0]), int(pix[1]), :] = np.array([pix[0], pix[1],dist])#записва съответствята на координатите между снимките и шаблоните
+                    if self.mask[int(patPix[0]), int(patPix[1])] == 0 or dist < self.grayCodeMap[int(patPix[0]), int(patPix[1]), 2]:
+                        #записва съответствята на координатите между снимките и шаблоните
+                        self.grayCodeMap[int(patPix[0]), int(patPix[1]), :] = np.array([patPix[0], patPix[1],dist])
                         #маркира се като бяло, т.е. има съвпадение
-                        self.mask[int(pix[0]), int(pix[1])] = 255
+                        self.mask[int(patPix[0]), int(patPix[1])] = 255
+                        self.colorImg[int(patPix[0])][int(patPix[1])] = colorImgAll[pix[0]][pix[1]]#Записване на цвета на съвпадащия пиксел
                         yerr += 1
 
         print(yerr)#1 256 929/117 821
@@ -233,12 +230,12 @@ class Reconstruct3D:
             fid.write('ply\n')
             fid.write('format ascii 1.0\n')
             fid.write('element vertex %d\n'%np.count_nonzero(self.mask))#[675:1030,745:1145]
-            fid.write('property float x\n')
-            fid.write('property float y\n')
-            fid.write('property float z\n')
-            fid.write('property float red\n')
-            fid.write('property float green\n')
-            fid.write('property float blue\n')
+            fid.write('property double x\n')
+            fid.write('property double y\n')
+            fid.write('property double z\n')
+            fid.write('property uchar red\n')
+            fid.write('property uchar green\n')
+            fid.write('property uchar blue\n')
             fid.write('end_header\n')
 
             # Write 3D points to .ply file
@@ -249,28 +246,71 @@ class Reconstruct3D:
                                 self.colorImg[y][x][2],self.colorImg[y][x][1],self.colorImg[y][x][0]))#150,0,0))# .astype(np.float) / 255.0
         print(fileFullName)
 
+    def removeBackground(self, pcd):
+        rotCenter=(800, 935, 283)#(ширина,височина,дълбочина)
+        R = pcd.get_rotation_matrix_from_xyz((np.deg2rad(0), np.deg2rad(0), np.deg2rad(2.5)))#Последното върти все едно сминката и е 0, защото си е ОК
+        pcd = pcd.rotate(R, center=rotCenter)#Завъртане малко на основата, за да се махне максимално въртящата платформа
+        bbox = o3d.geometry.AxisAlignedBoundingBox(min_bound=(0, 0, 0), max_bound=(self.cSize[1], self.cSize[0]-155, 283))#(ширина,височина,дълбочина)
+        pcd = pcd.crop(bbox)#махане на задния фон и максимална част от въртящата платформа
+        #връщане на първоначалната ориентация, за да може да се приложи начисто резултатът от сканирането.
+        R = pcd.get_rotation_matrix_from_xyz((np.deg2rad(0), np.deg2rad(0), -np.deg2rad(2.5)))#Последното върти все едно сминката и е 0, защото си е ОК
+        pcd = pcd.rotate(R, center=rotCenter)#Завъртане малко на основата, за да се махне максимално въртящата платформа
+        return pcd
+
     # Зареждане на облака от точки от xyzrbg файл
     # dir - директорията, в която са запазени point clound да всяка гледна точка
     # scan_no - номер на сканиране. Ако не е подадено, зарежда всички гледни точки
     def loadPointCloud(self, dir, scan_no):
+        rotCenter=(800, 935, 283)#(ширина,височина,дълбочина)#Центърът, около който се върти платформата
+
         for scan_no2 in [30]:#range(0, 200, 10):#range(0, 50, 10):#
             fileFullName = '{0}/{1}{2}.ply'.format(dir,self.FILE_NAME,scan_no2)
             pcd = o3d.io.read_point_cloud(fileFullName)
-            # points = np.asarray(pcd.points)
-            # pcd = pcd.select_by_index(np.where(points[:,1] > 600)[0])#700
-            # points = np.asarray(pcd.points)
-            # pcd = pcd.select_by_index(np.where(points[:,1] < 1000)[0])
-            # points = np.asarray(pcd.points)
-            # pcd = pcd.select_by_index(np.where(points[:,2] < 1000)[0])
             # downpcd = pcd.voxel_down_sample(voxel_size=0.05) # down sample на входните точки, за да не са твърде много и да се обработва по-лесно.
+            pcd = self.removeBackground(pcd)#махане на задния фон и максимална част от въртящата платформа
+            # pcd = pcd.translate((-350, 100, -870))
+            # Всекя гледна точка е завътряна на 1.8*броя стъпки.(1.8. са градусите на завъртане за една стъпка)
             R = pcd.get_rotation_matrix_from_xyz((0, -np.deg2rad(1.8*scan_no2), 0))
-            pcd = pcd.rotate(R, center=(885,1000,295))
-# 885,1000,295
+            pcd = pcd.rotate(R, center=rotCenter)
+
+            o3d.io.write_point_cloud("copy_of_fragment.ply",pcd, True)
+
             self.fullPointClound = np.append(self.fullPointClound,pcd)
 
-        # За тест може да се визуализира пълния или down sample облак от точки
+        self.drawBoxesAndCenter(pcd,rotCenter)
         self.visualizationPointCloud(self.fullPointClound)#downpcd # Визуализиране на облака от точки
 
     # Визуализиране на облака от точки
     def visualizationPointCloud(self, pcd):
         o3d.visualization.draw_geometries(pcd)
+
+    def triangle_pcd(self,rotCenter):
+        '''
+         Defines the point cloud of a triangle
+        :return:
+        '''
+        center = np.array(rotCenter)
+        triangle_points = np.array([center-5,center, center+5], dtype=np.float32)
+        lines = [[0, 1], [1, 2], [2, 0]]  # Right leg
+        colors = [[0, 0, 1] for i in range(len(lines))]  # Default blue
+        #  Define the three corners of a triangle
+        point_pcd = o3d.geometry.PointCloud()  #  Defining point clouds
+        point_pcd.points = o3d.utility.Vector3dVector(triangle_points)
+
+        #  Define the triangle, three connecting lines
+        line_pcd = o3d.geometry.LineSet()
+        line_pcd.lines = o3d.utility.Vector2iVector(lines)
+        line_pcd.colors = o3d.utility.Vector3dVector(colors)
+        line_pcd.points = o3d.utility.Vector3dVector(triangle_points)
+
+        return line_pcd, point_pcd
+
+    # За DEBUG - Визуализиране на кутии за ориентиране(на обекта и на координатната система). Рисува центъра
+    def drawBoxesAndCenter(self, pcd, rotCenter):
+        # Визуализиране на кутии за ориентиране
+        aabb = pcd.get_axis_aligned_bounding_box()
+        aabb.color = (1, 0, 0)
+        obb = pcd.get_oriented_bounding_box()
+        obb.color = (0, 1, 0)
+        line_pcd, point_pcd = self.triangle_pcd(rotCenter)
+        o3d.visualization.draw_geometries([pcd,line_pcd,point_pcd,aabb,obb])
