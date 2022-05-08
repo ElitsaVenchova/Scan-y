@@ -19,9 +19,6 @@ class CameraPi:
     STEREO_CALIBRATION_DIR = "./Stereo_Calib" # Резултатът от стерео калибрирането се записва в главната директория
     STEREO_CALIBRATION_FILE = "/StereoCalibResult.json" # Файл с резултата от калибрирането
 
-    BLACK_N_WHITE = 0 #Флаг, изображението да се прочете като черно бяло
-    COLOR = 1 # Флаг, изображението да се прочете като цветно
-
     # Инициализиране на необходимите параметри на камерата
     def __init__(self):
         # зареждане на вътрешните параметри на камерата
@@ -78,17 +75,14 @@ class CameraPi:
         return img
 
     #Прочита изображенията за определен шаблон
-    def loadPatternImages(self, dir, patternCode,  readType, scan_no = '', img_no='?'):
+    def loadPatternImages(self, dir, patternCode,  scan_no, readType = cv.IMREAD_GRAYSCALE, img_no='?'):
         # Зареждат се всички изображения, които отговорят на шаблона
         # img_no - ?(точно един символ),*(0 или повече символи),конретно чисто(зарежда изображението с конкретен номер)
         imgsNames = natsorted(glob.glob('./{0}/image{1}{2}{3}.jpg'.format(dir,scan_no,patternCode,img_no)))
         imgs = [] # масив със заредените изображения
         img = None
         for fname in imgsNames:
-            if readType == self.BLACK_N_WHITE:#Изображението се прочита черно бяло
-                img = self.loadImage(fname,cv.IMREAD_GRAYSCALE)
-            else:# иначе цветно
-                img = self.loadImage(fname)
+            img = self.loadImage(fname,readType)
             imgs.append(img)
         return np.array(imgs)
 

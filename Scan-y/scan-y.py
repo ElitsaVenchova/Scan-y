@@ -2,14 +2,10 @@
 Structure light 3D scanner
 
 @TODO:
-    * За хоризонталинте шаблони да се направи да се създават брой, които отговаря на височината, а не просто да бъдат транспонирани.
-    * Да се създаде нов клас poinCloudProcessing, който ще прочита гледните точки и ще ги обработка + 360 градуса
-    * функцията в reconstruct3D за четене да изображенията да се преместви в cameraPi
     * Reconstruct3D.filterGrayCode - не работи добре, да се оправи
         * self.morphologyEx - изисква предния фон да е бял, а задния черен. Може би затова резултатът не е добър.
     * За получаване на минимална разлика между пиксели трябва да се направи Lagrange Interpolation
         * https://aikiddie.wordpress.com/2017/05/24/depth-sensing-stereo-image/
-    * Тестът за точност може да бъде между резултата в MeshLap и сканиране на ДиТра
 """
 import cv2 as cv
 import numpy as np
@@ -20,7 +16,7 @@ import time
 
 def scan(args): # Сканиране
     start = time.time()
-    scanY.scan(args.pattern, args.stepSize)
+    scanY.scan(args.pattern, args.stepSize, args.theshold)
     print('exec time: ', time.time()-start)
 
 def stereoCalib(args): # Стерео калибриране
@@ -62,6 +58,8 @@ if __name__=="__main__":
                                 '0-WHITE, 1-BLACK, 2-OPENCV_GRAY_CODE, 3(default)-MANUAL_GRAY_CODE, 4-PHASE_SHIFTING, 5-GRAY_CODE_AND_PHASE_SHIFTING, 6-BINARY, 7-STRIPE')
     parser_scan.add_argument('stepSize', type=int, nargs='?', choices=range(1,200), metavar="stepSize [1-200]",default = 10,
                                 help='Size of step of step motor (1 step=1.8 degrees). Range between 1 and 200. Default:10')
+    parser_scan.add_argument('threshold', type=int, nargs='?', default = 20,
+                                help='Addition threshold to the average intensity in the highlighted and unlit images of pixel. Default:10')
     parser_scan.set_defaults(func=scan)
 
     #Stereo calibration

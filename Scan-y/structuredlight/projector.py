@@ -10,7 +10,6 @@ class Projector:
     media_player = None
     TMP_PATTERN_FILE_NAME = "/tmpPattern.jpg" # Име на файл, в който се записва изображението преди проектиране, защото VLC работи само с директория на файл за прожектиране.
     CALIBRATION_DIR = "./Projector_Calib" # Директория съдържаща снимките за калибриране и файла с резултата
-    CHESS_BOARD_PATTERN = "/chessboard.jpg" # Файл с резултата от калибрирането
 
     # Стартира HDMI порта, ако не е
     def __init__(self, cameraPi):

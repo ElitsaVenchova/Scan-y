@@ -27,26 +27,26 @@ class StructuredLight:
     # Сканиране на 360*.
     # На всяка стъпка се прави снимка без шаблон и снимка с всеки шаблон
     # stepSize - размер на стъпката. stepSize=1 е завъртане на 1.8 градуса. stepSize=200 е 200*1.8=3600 градуса.
-    def scan(self, patternCode, stepSize):
+    def scan(self, patternCode, stepSize, theshold):
         reconstruct3D = Reconstruct3D(self.cameraPi) # инициализиране на обект Реконструиране
         # шаблоните
         patternImgs = self.patterns.genetare(patternCode,self.cameraPi.stereoCalibrationRes['pShape']) # шаблоните
         calibRes = self.cameraPi.getUndistortCalibrationRes(self.SCAN_DIR) # резултатите от калибрането необходими за сканиране(в SCAN_DIR)
 
-        self.projector.start()
-        # интериране позициите на масата за завъртане на 360*
-        for i in range(0, self.turntable.SPR, stepSize):
-            for pattType, patt in patternImgs.items():
-                self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i, calibRes)
-            self.turntable.step(stepSize)
-        self.projector.stop()
+        # self.projector.start()
+        # # интериране позициите на масата за завъртане на 360*
+        # for i in range(0, self.turntable.SPR, stepSize):
+        #     for pattType, patt in patternImgs.items():
+        #         self.scanCurrentStep(patt, self.SCAN_DIR, pattType, i, calibRes)
+        #     self.turntable.step(stepSize)
+        # self.projector.stop()
 
-        reconstruct3D.reconstruct(self.SCAN_DIR, patternCode, self.turntable.SPR, stepSize) # реконструиране на резултата от сканирането.
+        reconstruct3D.reconstruct(self.SCAN_DIR, patternCode, self.turntable.SPR, stepSize, theshold) # реконструиране на резултата от сканирането.
 
     # Стерео калибриране на проектора и камерата едновременно. Тук се генерира и информацията за тяхното разположение спрямо сцената.
     def stereoCalibrate(self, chessboardSize):
         patternCode = Patterns.CHESS_BOARD
-        patternImgs = self.patterns.genetare(patternCode,self.projector.pCalibrationRes["shape"],chessboardSize) # генериране на шаблон Шахматна дъска
+        patternImgs = self.patterns.genetare(patternCode,self.projector.pCalibrationRes["shape"],None,chessboardSize) # генериране на шаблон Шахматна дъска
 
         self.projector.start() # заснемане на всички генерирани шаблони
         for pattType, patt in patternImgs.items():
