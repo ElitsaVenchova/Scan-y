@@ -9,14 +9,14 @@ Structure light 3D scanner
 """
 import cv2 as cv
 import numpy as np
-import structuredlight as sl
+import structuredlight.structuredlight as sl
 import math
 import argparse
 import time
 
 def scan(args): # Сканиране
     start = time.time()
-    scanY.scan(args.pattern, args.stepSize, args.theshold)
+    scanY.scan(args.pattern, args.stepSize, args.threshold)
     print('exec time: ', time.time()-start)
 
 def stereoCalib(args): # Стерео калибриране

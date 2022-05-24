@@ -46,9 +46,7 @@ class Patterns:
         elif patternCode == self.PHASE_SHIFTING:
             return self.phaseShifting(pSize)
         elif patternCode == self.GRAY_CODE_AND_PHASE_SHIFTING:
-            patterns = self.white(pSize)
-            patterns.update(self.black(pSize))
-            patterns.update(self.manualGray(pSize))
+            patterns = self.manualGray(pSize)
             patterns.update(self.phaseShifting(pSize))
             return patterns
         elif patternCode == self.BINARY:
