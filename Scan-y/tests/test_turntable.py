@@ -2,44 +2,45 @@ import pytest
 
 from structuredlight.structuredlight import Turntable
 
-@pytest.fixture(params=["X","Y"],scope="module")
-def init_clear(request):
-    yield request.param
-    # print("Clean")
-    pass
+# Създаване на обект за въртящата платформа
+@pytest.fixture(scope="module")
+def turntbl(request):
+    return Turntable()
 
-@pytest.mark.final
-@pytest.mark.parametrize("a,b,expected",
-                        [("A","B","AB"),
-                        ("C","D","CD")])
-def test_step(a,b,expected,init_clear):
-    print(a+init_clear)
-    tr = Turntable()
-    assert True
-
+# Проверка на различни ротирания на въртящата платформа.
 @pytest.mark.final
 @pytest.mark.regression
-def test_step2(init_clear):
-    tr = Turntable()
-    assert True
+@pytest.mark.unit
+@pytest.mark.parametrize("step_size,dir,cnt",
+                        [(1,Turntable.CW,1),
+                        (200,Turntable.CW,1),
+                        (200,Turntable.CW,5),
+                        (5,Turntable.CW,5),
+                        (1,Turntable.CW,0),
+                        (0,Turntable.CW,1),
+                        (1,Turntable.CCW,1),
+                        (200,Turntable.CCW,1),
+                        (200,Turntable.CCW,5),
+                        (5,Turntable.CCW,5),
+                        (1,Turntable.CCW,0),
+                        (0,Turntable.CCW,1)])
+def test_step(turntbl, step_size, dir, cnt):
+    #Няма assert. Ако гръмне, ще е неуспешен тест.
+    turntbl.step(step_size, dir, cnt)
 
+# Проверка на различни стойнисти, при които се очаква функцията да върне грешка.
+@pytest.mark.final
 @pytest.mark.regression
-def test_step3():
-    tr = Turntable()
-    assert True
-
-def test_step4():
-    tr = Turntable()
-    assert True
-
-@pytest.mark.skip
-def test_step5():
-    tr = Turntable()
-    assert True
-
-
-@pytest.mark.skip
-@pytest.mark.regression
-def test_step6():
-    tr = Turntable()
-    assert True
+@pytest.mark.unit
+@pytest.mark.parametrize("step_size,dir,cnt",
+                        [(None,Turntable.CW,1),
+                        (None,Turntable.CW,200),
+                        (1,Turntable.CW,None),
+                        (200,Turntable.CW,None),
+                        (None,Turntable.CCW,1),
+                        (None,Turntable.CCW,200),
+                        (1,Turntable.CCW,None),
+                        (200,Turntable.CCW,None)])
+def test_step_error(turntbl, step_size, dir, cnt):
+    with pytest.raises(Exception):
+        turntbl.step(step_size, dir, cnt)
