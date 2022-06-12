@@ -328,7 +328,7 @@ class CameraPi:
                 "distortion" : fs.getNode('distortion').mat(),
                 "newCameraMatrix" : fs.getNode('newCameraMatrix').mat(),
                 "roi" : fs.getNode('roi').mat(),
-                "error" : fs.getNode('error')
+                "error" : fs.getNode('error').real()
                 }
         return calibrationRes
 

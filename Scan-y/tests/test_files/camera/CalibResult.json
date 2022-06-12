@@ -1,0 +1,38 @@
+{
+    "shape": {
+        "type_id": "opencv-matrix",
+        "rows": 2,
+        "cols": 1,
+        "dt": "d",
+        "data": [ -1.0, -2.0 ]
+    },
+    "matrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ -2.0 ]
+    },
+    "distortion": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ -3.0 ]
+    },
+    "newCameraMatrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ -4.0 ]
+    },
+    "roi": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ -5.0 ]
+    },
+    "error": -6.0
+}

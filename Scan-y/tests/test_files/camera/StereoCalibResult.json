@@ -1,0 +1,93 @@
+{
+    "cShape": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "i",
+        "data": [ 1 ]
+    },
+    "pShape": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "i",
+        "data": [ 2 ]
+    },
+    "cameraMatrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 3 ]
+    },
+    "cameraDistortion": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 4 ]
+    },
+    "cRoi": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 5 ]
+    },
+    "projectorMatrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 6 ]
+    },
+    "projectorDistortion": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 7 ]
+    },
+    "pRoi": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 8 ]
+    },
+    "r_matrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 9 ]
+    },
+    "t_vecs": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 10 ]
+    },
+    "essentialMatrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 11 ]
+    },
+    "fundamentalMatrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 12 ]
+    },
+    "disparityToDepthMatrix": {
+        "type_id": "opencv-matrix",
+        "rows": 1,
+        "cols": 1,
+        "dt": "d",
+        "data": [ 13 ]
+    }
+}
