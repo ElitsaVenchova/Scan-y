@@ -63,7 +63,7 @@ class Patterns:
     """
     def white(self, pSize):
         height, width = pSize
-        imgMatr = 255*np.zeros((1,height, width), np.uint8)
+        imgMatr = 255*np.ones((1,height, width), np.uint8)
         return {self.WHITE_PATTERN:imgMatr}
 
     """
@@ -71,7 +71,7 @@ class Patterns:
     """
     def black(self, pSize):
         height, width = pSize
-        imgMatr = 255*np.ones((1,height, width), np.uint8)
+        imgMatr = 255*np.zeros((1,height, width), np.uint8)
         return {self.BLACK_PATTERN:imgMatr}
 
     """
@@ -186,6 +186,8 @@ class Patterns:
     """
     def binaryCodePattCnt(self, pSize):
         height, width = pSize
+        if pSize == (0,0):#Ако е размерът е (0,0), то броят шаблони е 0
+            return (0,0)
         return (int(math.log2(width)),int(math.log2(height)))#+1#Има още един шаблон, където всяко райе е с ширина 1 пиксел, но проекторът не е с толкова висока резолюция.
 
     # Размножава шаблините - шаблони, транспонирани, обърнати, транспонирани и обърнати
