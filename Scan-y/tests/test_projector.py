@@ -1,5 +1,6 @@
 import pytest
 import cv2 as cv
+import sys
 
 from structuredlight.structuredlight import Projector
 from structuredlight.structuredlight import CameraPi
@@ -23,7 +24,7 @@ def start_stop(proj):
     yield proj
     proj.stop()
 # fixture, който съдържа стойностите за тест с различни изображения по цвят и различно число в тях
-@pytest.fixture(params=[[("./tests/test_files/projector/1.png"),
+@pytest.fixture(params=[("./tests/test_files/projector/1.png"),
                          ("./tests/test_files/projector/2.png"),
                          ("./tests/test_files/projector/3.png"),
                          ("./tests/test_files/projector/4.png"),
@@ -32,7 +33,7 @@ def path(request):
     return request.param
 
 # fixture, който съдържа стойностите за тест, които трябва да дадът грешка
-@pytest.fixture(params=[[(None),
+@pytest.fixture(params=[(None),
                          ("./tests/test_files/projector/6.png"),
                          ("./tests/test_files/projector/dada.png"),
                          ("4.png")])
@@ -48,6 +49,7 @@ def test_playImageByPath(start_stop,path):
     start_stop.playImageByPath(path)
 
 # тестване показване на изображение по подаден път.
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 @pytest.mark.final
 @pytest.mark.regression
 @pytest.mark.unit
