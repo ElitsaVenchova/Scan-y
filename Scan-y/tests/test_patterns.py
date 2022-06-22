@@ -63,23 +63,7 @@ def test_white(patt,pSize):
 def test_white_error(patt,pSize_error):
     with pytest.raises(Exception):
         patt.white(pSize_error)
-#######################################################################################################################
-# тест на белия шаблон
-@pytest.mark.final
-@pytest.mark.regression
-@pytest.mark.unit
-def test_white(patt,pSize):
-    height, width = pSize
-    pattWhite = patt.white(pSize)
-    assert (pattWhite[patt.WHITE_PATTERN]==255*np.ones((1,height, width), np.uint8)).all()
 
-# тест на белия шаблон със стойности, за които трябва да даде грешка
-@pytest.mark.final
-@pytest.mark.regression
-@pytest.mark.unit
-def test_white_error(patt,pSize_error):
-    with pytest.raises(Exception):
-        patt.white(pSize_error)
 #######################################################################################################################
 # тест на черния шаблон
 @pytest.mark.final
