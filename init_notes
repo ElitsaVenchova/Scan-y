@@ -23,6 +23,8 @@ pip3 install imutils				-- или pip
 pip3 install python-vlc                         -- vlc
 pip install natsort				-- python библиотека за инсталиране "естествено сортиране"
 pip install open3d
+pip install pytest
+pip install coverage			--test coverage
 --
 sudo nano /home/pi/.config/lxpanel/LXDE-pi/panels/panel         --add bg in keyboad. Променя се почти накрая на файла:ToggleOpt=grp:ctrl_shift_toggle и LayoutsList=en,bg  VariansList=,phonetic. Последното все още не знам как да задам phonetic.
 ----------------------------------------------------	

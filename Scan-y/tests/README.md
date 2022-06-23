@@ -10,6 +10,8 @@ To run all tests: 'pytest'
 To run custom mark test: 'pytest -m <custom_mark>' like 'pytest -m final'
 @pytest.mark.skip - inbuilt mark in pytest. If it is used, test is skipped.
 
+Code coverage: coverage run -m pytest
+
 Notes:
 ------------------------------
 pytest -s -> Show stdout

@@ -463,3 +463,12 @@ def test_readStereoCalibrationResult(cam):
     res = cam.readStereoCalibrationResult()
     expected = readStereoTestCalib(CameraPi.STEREO_CALIBRATION_DIR,CameraPi.STEREO_CALIBRATION_FILE)
     np.testing.assert_equal(res,expected)
+
+@pytest.mark.final
+@pytest.mark.regression
+@pytest.mark.unit
+@pytest.mark.parametrize("calibrationDir",
+                        [(None)])
+def test_readStereoCalibrationResult_error(cam,calibrationDir):
+    with pytest.raises(Exception):
+        cam.readStereoCalibrationResult(calibrationDir)
