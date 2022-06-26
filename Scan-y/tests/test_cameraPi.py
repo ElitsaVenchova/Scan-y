@@ -171,11 +171,10 @@ def calibrationDir(request):
                          ("./tests/test_files/camera","Inv1"),
                          ("./tests/test_files/camera", None),
                          ("./tests/test_files/camera",-5),
-                         ("./",-5),
-                         ("",-5)])
+                         ("./",-5)])
 def test_takePhoto(cam,dir,imageInd):
     cam.takePhoto(dir,imageInd)
-    assert cv.imread('{0}/image{1}.jpg'.format(dir,imageInd), cv.IMREAD_COLOR) != None
+    assert (cv.imread('{0}/image{1}.jpg'.format(dir,imageInd), cv.IMREAD_COLOR) != None).all()
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 @pytest.mark.final
@@ -187,10 +186,13 @@ def test_takePhoto(cam,dir,imageInd):
                          ("/asdf","Inv1"),
                          (None, None),
                          (None,""),
-                         (None,1)])
+                         (None,1),
+                         ("",-5)]) #Липсват права в root
 def test_takePhoto_error(cam,dir,imageInd):
     with pytest.raises(Exception):
-        cam.takePhoto(dir,imageInd)
+        x=cam.takePhoto(dir,imageInd)
+        print(x)
+        print(cv.imread('{0}/image{1}.jpg'.format(dir,imageInd), cv.IMREAD_COLOR))
 
 #######################################################################################################################
 ## тестване зареждане на правилен резултат от калибриране

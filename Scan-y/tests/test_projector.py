@@ -32,11 +32,16 @@ def start_stop(proj):
 def path(request):
     return request.param
 
+# fixture, който съдържа стойностите за тест с различни изображения по цвят и различно число в тях
+@pytest.fixture(params=[("./tests/test_files/projector/6.png"),
+                        ("./tests/test_files/projector/dada.png"),
+                        ("4.png")])
+def path_invalid(request):
+    return request.param
+
+
 # fixture, който съдържа стойностите за тест, които трябва да дадът грешка
-@pytest.fixture(params=[(None),
-                         ("./tests/test_files/projector/6.png"),
-                         ("./tests/test_files/projector/dada.png"),
-                         ("4.png")])
+@pytest.fixture(params=[(None)])
 def path_error(request):
     return request.param
 #######################################################################################################################
@@ -45,8 +50,13 @@ def path_error(request):
 @pytest.mark.regression
 @pytest.mark.unit
 def test_playImageByPath(start_stop,path):
-    img = cv.imread(path)
     start_stop.playImageByPath(path)
+    
+@pytest.mark.final
+@pytest.mark.regression
+@pytest.mark.unit
+def test_playImageByPath_invalid(start_stop,path_invalid):
+    start_stop.playImageByPath(path_invalid)
 
 # тестване показване на изображение по подаден път.
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")

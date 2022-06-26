@@ -323,7 +323,7 @@ class CameraPi:
             fs = cv.FileStorage(calibResulPath, cv.FILE_STORAGE_READ)
             # Параметри на камерата
             calibrationRes = {
-                "shape" : fs.getNode('shape').mat().astype(int).flatten(),
+                "shape" : tuple(fs.getNode('shape').mat().astype(int).flatten()),
                 "matrix" : fs.getNode('matrix').mat(),
                 "distortion" : fs.getNode('distortion').mat(),
                 "newCameraMatrix" : fs.getNode('newCameraMatrix').mat(),
@@ -345,8 +345,8 @@ class CameraPi:
             fs = cv.FileStorage(stereoCalibResulPath, cv.FILE_STORAGE_READ)
             # Параметри на камерата
             stereoCalibrationRes = {
-                "cShape" : fs.getNode('cShape').mat().astype(int).flatten(),
-                "pShape" : fs.getNode('pShape').mat().astype(int).flatten(),
+                "cShape" : tuple(fs.getNode('cShape').mat().astype(int).flatten()),
+                "pShape" : tuple(fs.getNode('pShape').mat().astype(int).flatten()),
                 "cameraMatrix" : fs.getNode('cameraMatrix').mat(),
                 "cameraDistortion" : fs.getNode('cameraDistortion').mat(),
                 "cRoi" : fs.getNode('cRoi').mat(),
