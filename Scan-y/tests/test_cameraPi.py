@@ -170,7 +170,6 @@ def calibrationDir(request):
                          ("./tests/test_files/camera",1),
                          ("./tests/test_files/camera","Inv1"),
                          ("./tests/test_files/camera", None),
-                         ("./tests/test_files/camera",""),
                          ("./tests/test_files/camera",-5),
                          ("./",-5),
                          ("",-5)])
@@ -206,6 +205,8 @@ def test_takePhoto_error(cam,dir,imageInd):
                          ("",
                             readTestStereoCalibUndistor(readStereoTestCalib(TEST_DIR,CameraPi.STEREO_CALIBRATION_FILE))),
                          ("./",
+                            readTestStereoCalibUndistor(readStereoTestCalib(TEST_DIR,CameraPi.STEREO_CALIBRATION_FILE))),
+                         (StructuredLight.SCAN_DIR,
                             readTestStereoCalibUndistor(readStereoTestCalib(TEST_DIR,CameraPi.STEREO_CALIBRATION_FILE)))])
 def test_getUndistortCalibrationRes(cam,dir,res):
     funcRes = cam.getUndistortCalibrationRes(dir)
@@ -312,20 +313,6 @@ def test_loadPatternImages_invalidPath2(cam,fname,patternCode,scan_no,flag,img_n
 @pytest.mark.final
 @pytest.mark.regression
 @pytest.mark.unit
-@pytest.mark.parametrize("errorPath",
-                        [(None)])
-def test_loadPatternImages_errorPath(cam,errorPath,patternCode,scan_no,flag,img_no):
-    if flag is None:
-        funcRes = cam.loadPatternImages(invalidPath,patternCode,scan_no)
-    elif img_no is None:
-        funcRes = cam.loadPatternImages(invalidPath,patternCode,scan_no,flag)
-    else:
-        funcRes = cam.loadPatternImages(invalidPath,patternCode,scan_no,flag,img_no)
-    assert (funcRes == np.array([])).all()
-
-@pytest.mark.final
-@pytest.mark.regression
-@pytest.mark.unit
 @pytest.mark.parametrize("invalidPatternCode",
                         [(None),
                          (""),
@@ -422,12 +409,11 @@ def test_writeStereoCalibrationResult(cam,calibrationDir, fname):
 @pytest.mark.final
 @pytest.mark.regression
 @pytest.mark.unit
-@pytest.mark.parametrize("calibrationDir, calibrationRes",
-                        [(None,readStereoTestCalib("./tests/test_files/camera","/StereoCalibResult.json")),
-                         (calibrationDir,None)])
-def test_writeStereoCalibrationResult_error(cam,calibrationDir, calibrationRes):
+@pytest.mark.parametrize("calibrationDir",
+                        [(None)])
+def test_writeStereoCalibrationResult_error(cam,calibrationDir):
     with pytest.raises(Exception):
-        cam.writeStereoCalibrationResult(calibrationDir, calibrationRes)
+        cam.writeStereoCalibrationResult(calibrationRes)
 
 #######################################################################################################################
 ## тестване зареждане на резултат от калибриране
@@ -463,12 +449,3 @@ def test_readStereoCalibrationResult(cam):
     res = cam.readStereoCalibrationResult()
     expected = readStereoTestCalib(CameraPi.STEREO_CALIBRATION_DIR,CameraPi.STEREO_CALIBRATION_FILE)
     np.testing.assert_equal(res,expected)
-
-@pytest.mark.final
-@pytest.mark.regression
-@pytest.mark.unit
-@pytest.mark.parametrize("calibrationDir",
-                        [(None)])
-def test_readStereoCalibrationResult_error(cam,calibrationDir):
-    with pytest.raises(Exception):
-        cam.readStereoCalibrationResult(calibrationDir)
