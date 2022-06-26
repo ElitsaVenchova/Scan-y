@@ -103,8 +103,6 @@ def cam(request):
     os.remove(cameraOldName)
     os.rename(cameraNewName,cameraOldName) # възстановяване на файла за калибриране
     # Възстановяване стерео калибриране
-    delete_imgs('{0}/*.png'.format(TEST_DIR))
-    delete_imgs('./*.png')
     os.remove(stereoOldName)
     os.rename(stereoNewName,stereoOldName) # възстановяване на файла за калибриране
 
