@@ -78,7 +78,7 @@ class CameraPi:
     def loadPatternImages(self, dir, patternCode,  scan_no, readType = cv.IMREAD_GRAYSCALE, img_no='?'):
         # Зареждат се всички изображения, които отговорят на шаблона
         # img_no - ?(точно един символ),*(0 или повече символи),конретно чисто(зарежда изображението с конкретен номер)
-        imgsNames = natsorted(glob.glob('./{0}/image{1}{2}{3}.jpg'.format(dir,scan_no,patternCode,img_no)))
+        imgsNames = natsorted(glob.glob('{0}/image{1}{2}{3}.jpg'.format(dir,scan_no,patternCode,img_no)))
         imgs = [] # масив със заредените изображения
         img = None
         for fname in imgsNames:

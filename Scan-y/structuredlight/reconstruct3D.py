@@ -33,9 +33,9 @@ class Reconstruct3D:
     """
     def reconstruct(self, dir, patternCode, stepsCnt, stepSize, theshold):
 
-        for scan_no in [70]:#range(0, stepsCnt, stepSize):#
+        for scan_no in range(0, stepsCnt, stepSize):#[70]:#
             self.__init__(self.cameraPi)#Класът се инициализира отново, за да се изчистят вече запазените данни от предходното сканиране
-            # self.manualMapGrayCode(dir, patternCode, scan_no, theshold) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
+            self.manualMapGrayCode(dir, patternCode, scan_no, theshold) # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
             # Тези долу са само резервни варианти, които не работят или не са оптимални, но могат да се използват в бъдеще
             # # # self.autoMapGrayCode(dir, scan_no) # Автоматично мапиране от OpenCV на GrayCode шаблони, но трябва да е заснето с шаблоните на OpenCV
             # # #
@@ -81,7 +81,7 @@ class Reconstruct3D:
     # Ръчно мапиране на шаблоните. Работи за GrayCode и Binary(не е тествано)
     # Горното не работи много вярно
     def manualMapGrayCode(self, dir, patternCode, scan_no, theshold):
-        colorImgAll = self.cameraPi.loadPatternImages(dir, Patterns.INV_PATTERN, cv.IMREAD_COLOR, scan_no, 0)[0] #Първият шаблон от Inverse е изцяло бял
+        colorImgAll = self.cameraPi.loadPatternImages(dir, Patterns.INV_PATTERN, scan_no, cv.IMREAD_COLOR, 0)[0] #Първият шаблон от Inverse е изцяло бял
 
         print('Pattern code: ', patternCode, '/ scan_no: ', scan_no)
         patternImgs = Patterns().genetare(patternCode, self.cSize,Patterns().binaryCodePattCnt(self.pSize)) # Шаблоните
@@ -133,7 +133,7 @@ class Reconstruct3D:
 
         # DEBUG
         # np.savetxt('Img{0}.txt'.format(scan_no), x, fmt='%i', delimiter='\t')
-        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,'txt'), img)
+        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,'txt'), msk)
 
         # Генериране на индекси на изображенията [[0,0],[0,1],[0,1],[1,0],[1,1],...]
         indImg = np.mgrid[:tempGrayCodeMap[Patterns.IMAGE_PATTERN].shape[0],:tempGrayCodeMap[Patterns.IMAGE_PATTERN].shape[1]]
@@ -145,6 +145,11 @@ class Reconstruct3D:
         # Аналогичното важи и за транспонираните шаблони. Използва се оператор умножаване <*>, защото дава грешка при използването на <and>
         stackImgs = stackImgs[((stackImgs[:,:,2] + stackImgs[:,:,3] == pow(2,len(grayCodeImgs[Patterns.IMAGE_PATTERN]))-1) *
             (stackImgs[:,:,4] + stackImgs[:,:,5]  == pow(2,len(grayCodeImgs[Patterns.TRANS_PATTERN]))-1)),:]#Някак от 3D става 2D масив, но точно това ми трябва
+
+        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,Patterns.IMAGE_PATTERN), tempGrayCodeMap[Patterns.IMAGE_PATTERN])
+        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,Patterns.INV_PATTERN), tempGrayCodeMap[Patterns.INV_PATTERN])
+        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,Patterns.TRANS_PATTERN), tempGrayCodeMap[Patterns.TRANS_PATTERN])
+        # cv.imwrite('Img{0}{1}.jpg'.format(scan_no,Patterns.TRANS_INV_PATTERN), tempGrayCodeMap[Patterns.TRANS_INV_PATTERN])
 
         # Генериране на индекси на шаблоните [[0,0],[0,1],[0,1],[1,0],[1,1],...]
         indPatt = np.mgrid[:tempPattGrayCodeMap[Patterns.IMAGE_PATTERN].shape[0],:tempPattGrayCodeMap[Patterns.IMAGE_PATTERN].shape[1]]
